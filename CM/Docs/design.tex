@@ -1,0 +1,116 @@
+\documentclass[a4paper]{article}
+\usepackage[english]{babel}
+\usepackage{alltt}
+\usepackage{url}
+\usepackage{graphicx}
+
+\title{Concurrency and Multithreading - Design}
+
+\author{Jayke Meijer, 2526284, \url{jayke.meijer@gmail.com} \\
+Tadde\"us Kroes, , \url{}}
+
+\begin{document}
+
+\maketitle
+\pagebreak
+
+\tableofcontents
+\pagebreak
+
+\section{Introduction}
+
+This document discusses the design of several concurrent data
+structures. Both an advanced design and a discussion about the
+expected performance will be given for each data structure.
+
+The data structures are the following: CoarseGrainedList,
+CoarseGrainedTree, FineGrainedList, FineGrainedTree,
+LockFreeList and LockFreeTree.
+
+The difficulty with these data structures is that they are
+accessed by several threads concurrently, so mutual exclusion has
+to be provided for the parts where the updates take place.
+
+\section{CoarseGrainedList}
+
+The first data structure discussed is the CoarseGrainedList.
+This is a singly-linked list. When an element is added or removed,
+the entire data structure is locked.
+
+\subsection{Design}
+
+Design of CGL.
+
+\subsection{Performance}
+
+Performance Evaluation of CGL.
+
+\section{CoarseGrainedTree}
+
+The CoarseGrainedTree is a binary search tree. As with the
+CoarseGrainedList, the complete data structure is locked when
+a add or remove is performed.
+
+\subsection{Design}
+
+Design of CGT.
+
+\subsection{Performance}
+
+Performance Evaluation of CGT.
+
+\section{FineGrainedList}
+
+The FineGrainedList is a linked list that only locks a part of
+the data structure when performing an add or remove operation. This
+gives it the ability to have several threads update the list at the
+same time.
+
+\subsection{Design}
+
+Design of FGL.
+
+\subsection{Performance}
+
+Performance Evaluation of FGL.
+
+\section{FineGrainedTree}
+
+The FineGrainedTree is a tree in which only a part of the data structure
+will be locked for add or remove operations, as with the FineGrainedList.
+
+\subsection{Design}
+
+Design of FGT.
+
+\subsection{Performance}
+
+Performance Evaluation of FGT.
+
+\section{LockFreeList}
+
+The LockFreeList is a linked list that does not use a lock when updating
+the datastructure. Instead it uses a single atomic operation for both
+comparing and updating, compare-and-set instructions.
+
+\subsection{Design}
+
+Design of LFL.
+
+\subsection{Performance}
+
+Performance Evaluation of LFL.
+
+\section{LockFreeTree}
+
+The LockFreeTree uses compare-and-set instructions in stead of locks.
+
+\subsection{Design}
+
+Design of LFT.
+
+\subsection{Performance}
+
+Performance Evaluation of LFT.
+
+\end{document}
