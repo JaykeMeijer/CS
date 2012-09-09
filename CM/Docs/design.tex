@@ -1,6 +1,7 @@
 \documentclass[a4paper]{article}
 \usepackage[english]{babel}
 \usepackage{alltt}
+\usepackage{amsmath}
 \usepackage{url}
 \usepackage{graphicx}
 
@@ -39,11 +40,39 @@ the entire data structure is locked.
 
 \subsection{Design}
 
-Design of CGL.
+For the CoarseGrainedList a singly-linked list is required. To create this
+list a sequence of nodes is used. These nodes contain both the stored items
+and a link to the next node in the list.
+
+To lock the list when an \emph{add} or \emph{remove} operation is performed,
+a single lock is required. The lock is acquired in the beginning of the
+operation. Once the lock is obtained, either the position to insert the new
+node or the node to remove is located, and the remove or insert operation is
+performed. Once this is successfully done, the lock is released, allowing
+other threads to do their operations.
 
 \subsection{Performance}
 
-Performance Evaluation of CGL.
+The performance of the CoarseGrainedList is expected to be very poor. Almost
+no parallel execution is possible, due to the fact that the entire
+data structure is locked during the entire add or remove operation. This means
+that whenever one thread is performing such an operation, no other thread can
+do such an operation, but also not even prepare this operation, by for example
+locating the nodes affected.
+
+This means that regardless of the number of elements in the data structure,
+only one thread at a time can access the list. The performance is therefore
+expected to be very poor when a lot of threads are trying to execute a lot
+of operations on the list.
+
+The complexity for a single thread will be of $\mathcal{O}(n)$ with $n$ being
+the number of elements in the list, since
+locating the affected nodes means in worst case looping through the entire
+list.
+
+Since no parallel execution of the operations is possible, the worst-case
+complexity of the entire algorithm is expected to be $\mathcal{O}(n * m)$,
+with $n$ the number of elements and $m$ the number of threads.
 
 \section{CoarseGrainedTree}
 
@@ -53,11 +82,34 @@ a add or remove is performed.
 
 \subsection{Design}
 
-Design of CGT.
+The design of the CoarseGrainedTree is comparable with the design of the
+CoarseGrainedList. However, the nodes used now have up to two child nodes
+instead of a single following node.
+
+The locking mechanism remains the same, the entire tree is locked before
+an add or remove operation is performed. Again, the operation performed
+during the lock includes the locating of the affected nodes.
 
 \subsection{Performance}
 
-Performance Evaluation of CGT.
+As with the CoarseGrainedList, the performance will be poor when a lot of
+threads try to perform operations simultaneously.
+
+The locating of the affected nodes will be faster, since we are dealing
+with a binary tree instead of a list. Therefore the overall performance
+will be better, due to the fact that the basic algorithm is more effective.
+
+The complexity of a single thread is in the worst-case the same as with the
+linked list, when the tree is completely unbalanced, so $\mathcal{O}(n)$.
+However, the average complexity will be better than that, and better than the
+average complexity of the linked list.
+
+If the tree is completely balanced, the complexity will be of order
+$\mathcal{O}(log n)$.
+
+Once again, these complexities are to be multiplied with the number of
+threads, giving $\mathcal{O}(n * m)$ and $\mathcal{O}(log(n) * m)$
+respectively.
 
 \section{FineGrainedList}
 
