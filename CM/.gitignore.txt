@@ -1,4 +1,4 @@
-*.pdf
+design.pdf
 *.aux
 *.toc
 *.log
