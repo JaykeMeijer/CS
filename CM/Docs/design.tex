@@ -1,14 +1,13 @@
 \documentclass[a4paper]{article}
 \usepackage[english]{babel}
-\usepackage{alltt}
-\usepackage{amsmath}
-\usepackage{url}
-\usepackage{graphicx}
+\usepackage{alltt,amsmath,hyperref,graphicx}
 
 \title{Concurrency and Multithreading - Design}
 
 \author{Jayke Meijer, 2526284, \url{jayke.meijer@gmail.com} \\
 Tadde\"us Kroes, , \url{}}
+
+\def\bigoh{\mathcal{O}}
 
 \begin{document}
 
@@ -48,7 +47,7 @@ To lock the list when an \emph{add} or \emph{remove} operation is performed,
 a single lock is required. The lock is acquired in the beginning of the
 operation. Once the lock is obtained, either the position to insert the new
 node or the node to remove is located, and the remove or insert operation is
-performed. Once this is successfully done, the lock is released, allowing
+performed. Once this is done, the lock is released, allowing
 other threads to do their operations.
 
 \subsection{Performance}
@@ -65,20 +64,20 @@ only one thread at a time can access the list. The performance is therefore
 expected to be very poor when a lot of threads are trying to execute a lot
 of operations on the list.
 
-The complexity for a single thread will be of $\mathcal{O}(n)$ with $n$ being
+The complexity for a single thread will be $\bigoh(n)$ with $n$ being
 the number of elements in the list, since
 locating the affected nodes means in worst case looping through the entire
 list.
 
 Since no parallel execution of the operations is possible, the worst-case
-complexity of the entire algorithm is expected to be $\mathcal{O}(n * m)$,
+complexity of the entire algorithm is expected to be $\bigoh(n * m)$,
 with $n$ the number of elements and $m$ the number of threads.
 
 \section{CoarseGrainedTree}
 
 The CoarseGrainedTree is a binary search tree. As with the
 CoarseGrainedList, the complete data structure is locked when
-a add or remove is performed.
+an add or remove is performed.
 
 \subsection{Design}
 
@@ -90,6 +89,11 @@ The locking mechanism remains the same, the entire tree is locked before
 an add or remove operation is performed. Again, the operation performed
 during the lock includes the locating of the affected nodes.
 
+For the addition of nodes we use an algorithm as described here:
+\url{http://www.algolist.net/Data_structures/Binary_search_tree/Insertion}.
+The removal is done with the algorithm as described here:
+\url{http://www.algolist.net/Data_structures/Binary_search_tree/Removal}.
+
 \subsection{Performance}
 
 As with the CoarseGrainedList, the performance will be poor when a lot of
@@ -100,15 +104,15 @@ with a binary tree instead of a list. Therefore the overall performance
 will be better, due to the fact that the basic algorithm is more effective.
 
 The complexity of a single thread is in the worst-case the same as with the
-linked list, when the tree is completely unbalanced, so $\mathcal{O}(n)$.
+linked list, when the tree is completely unbalanced, so $\bigoh(n)$.
 However, the average complexity will be better than that, and better than the
 average complexity of the linked list.
 
-If the tree is completely balanced, the complexity will be of order
-$\mathcal{O}(log n)$.
+If the tree is completely balanced, the complexity will be
+$\bigoh(log n)$.
 
 Once again, these complexities are to be multiplied with the number of
-threads, giving $\mathcal{O}(n * m)$ and $\mathcal{O}(log(n) * m)$
+threads, giving $\bigoh(n * m)$ and $\bigoh(log(n) * m)$
 respectively.
 
 \section{FineGrainedList}
@@ -120,11 +124,34 @@ same time.
 
 \subsection{Design}
 
-Design of FGL.
+The locking is done as follows. A node is locked before its value is checked.
+When it is decided that this node is not yet the required node, the next node
+is locked first, before the lock on the current node is released. This way
+it is guaranteed that a node can not be removed between checking its value and
+the actual operation on the node. This is called \emph{Hand-over-hand} locking.
 
 \subsection{Performance}
 
-Performance Evaluation of FGL.
+The advantage of this data structure is expected to be better than that of the
+CoarseGrainedList, since multiple threads can operate on the list at the same
+time.
+
+However, there are some remarks to be made. The result of the 
+\emph{hand-over-hand} locking is that a thread can not pass another thread
+while traversing the list. This causes a delay when elements are added/removed
+in ascending order. Each thread will then still have to wait on the thread in
+front of him. The only advantage over the CoarseGrainedList is that while
+its waiting for the other list, it is already on its way to the proper node.
+
+The advantage of the FineGrainedList as opposed to the CoarseGrainedList will
+probably grow with the size of the list. In the FineGrainedList, part of an
+operation can be performed before a locked element is encountered, whereas the
+CoarseGrainedList blocks the list altogether.
+
+However, when no two threads are accessing the list at the same time, the
+FineGrainedList will have some lock overhead because elements are locked
+individually. Since the test application does not add pauses between adding/removing
+different elements, this case will probably not occur in the benchmark results.
 
 \section{FineGrainedTree}
 
