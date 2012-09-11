@@ -150,8 +150,9 @@ CoarseGrainedList blocks the list altogether.
 
 However, when no two threads are accessing the list at the same time, the
 FineGrainedList will have some lock overhead because elements are locked
-individually. Since the test application does not add pauses between adding/removing
-different elements, this case will probably not occur in the benchmark results.
+individually. Since the test application does not add pauses between
+adding/removing different elements, this case will probably not occur in the
+benchmark results.
 
 \section{FineGrainedTree}
 
@@ -160,11 +161,29 @@ will be locked for add or remove operations, as with the FineGrainedList.
 
 \subsection{Design}
 
-Design of FGT.
+The design of the lock mechanism in the FineGrainTree is comparable with that
+of the FineGrainList. The next node visited is locked before the lock on the
+current node can be released. The difference is that it locks one of the child
+nodes next instead of the single next node.
 
 \subsection{Performance}
 
-Performance Evaluation of FGT.
+With the FineGrainedList the problem was that while traversing the list, one
+thread has to wait for other threads that perform their tasks. With the tree
+this happens less often. When the thread A operates in another subtree than
+thread B, these threads do not interfere with each other.
+
+This effect is strongest when the tree is well balanced. Like with the
+CoarseGrainedTree, when the tree is completely unbalanced it basically is
+a linked list. All the advantages of the tree are then lost.
+
+For the best performance, the number of threads should be a lot smaller than
+the number of elements in the data structure. This means that there are
+enough subtrees and therefore less interference between threads. Of course,
+the head and first few levels of nodes can be expected to be the bottleneck
+in this, since these will be visited by each thread on every operation.
+Therefore the number of threads should not be too big. A maximum performance
+can be expected after a certain number of threads.
 
 \section{LockFreeList}
 
