@@ -81,17 +81,18 @@ an add or remove is performed.
 
 \subsection{Design}
 
-The design of the CoarseGrainedTree is comparable with the design of the
+The design of the CoarseGrainedTree is similar to the design of the
 CoarseGrainedList. However, the nodes used now have up to two child nodes
 instead of a single following node.
 
-The locking mechanism remains the same, the entire tree is locked before
-an add or remove operation is performed. Again, the operation performed
-during the lock includes the locating of the affected nodes.
+The locking mechanism remains the same: the entire tree is locked before
+an addition or removal operation is performed. Again, the operation performed
+during the lock includes the act of locating the affected nodes.
 
-For the addition of nodes we use an algorithm as described here:
+For the addition of nodes we use the algorithm described here: \\
 \url{http://www.algolist.net/Data_structures/Binary_search_tree/Insertion}.
-The removal is done with the algorithm as described here:
+
+Node removal is done using the algorithm described here: \\
 \url{http://www.algolist.net/Data_structures/Binary_search_tree/Removal}.
 
 \subsection{Performance}
@@ -117,18 +118,17 @@ respectively.
 
 \section{FineGrainedList}
 
-The FineGrainedList is a linked list that only locks a part of
-the data structure when performing an add or remove operation. This
-gives it the ability to have several threads update the list at the
-same time.
+The FineGrainedList is a linked list that only locks part of the data
+structure when performing an addition or removal operation. This allows
+multiple threads to update the list at the same time.
 
 \subsection{Design}
 
-The locking is done as follows. A node is locked before its value is checked.
-When it is decided that this node is not yet the required node, the next node
-is locked first, before the lock on the current node is released. This way
-it is guaranteed that a node can not be removed between checking its value and
-the actual operation on the node. This is called \emph{Hand-over-hand} locking.
+Locking is done as follows. A node is locked before its value is checked.
+If this node is not the required node, the next node is locked after which the
+lock on the current node is released. This way it is guaranteed that a node
+can not be changed between checking its value and the actual operation on the
+node. This is called \emph{Hand-over-hand} locking.
 
 \subsection{Performance}
 
