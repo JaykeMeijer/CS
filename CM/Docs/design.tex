@@ -210,14 +210,28 @@ threads can be removing the same node at the same time. When a thread attempts t
 remove a node that is already being removed by another thread, it starts iterating back
 at the head of the list (because its reference to the next node has become invalid).
 
-Apart from usage in the the iteration, the \texttt{compareAndSet} instruction is also
-used to update references from nodes to their successors. The instruction insures that
-the reference is not changed by another thread in between reading its value, and
-updating it.
+Apart from usage for traversal, the \texttt{compareAndSet} instruction is also used
+to update references from nodes to their successors. The instruction insures that the
+reference is not changed by another thread in between reading its value, and updating
+it.
 
 \subsection{Performance}
 
+In relation to the FineGrainedList, the LockFreeList should perform much better.
+While the FineGrainedList can cause a congestion at a locked element in the list,
+the LockFreeList allows threads to keep traversing through the list past nodes on
+which operations are being performed. This advantage is especially useful for lists
+with a large number of elements, in which case traversal covers a large part of the
+time needed for an operation.
 
+The LockFreeList should also scale well regarding the number of threads. Since there
+are no locks, no thread will ever be halted (wait-freeness). However, with the number
+of threads increasing, the change of two threads trying to remove the same marked node
+at the same time increases as well. When this happens, one of the threads will have to
+start traversing the list again from the head node. In terms of performance, this is an
+expensive operation, especially when the list contains a large number of elements. A
+reasonable expectation is that the ratio \emph{number of threads / list size} should
+not be too high in order to maintain maximum performance.
 
 \section{LockFreeTree}
 
