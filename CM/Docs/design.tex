@@ -194,11 +194,30 @@ comparing and updating, compare-and-set instructions.
 
 \subsection{Design}
 
-Design of LFL.
+The LockFreeList operations traverse through the linked list in pairs of nodes, like
+the FineGrainedList does. However, whereas the FineGrainedList locks a node before
+reading its value, the LockFreeList does not. To still be able to guarantee that a
+node of which the value has been read was not removed by another thread, all nodes
+have a mark. The mark indicates whether a node has been logically removed from the
+list (but not physically). By not physically removing the node, traversal through the
+list by other threads is not interrupted. The physical removal is done by the next
+thread that iterates over the node, using an abstraction of the pair-wise iteration
+called a \emph{Window}. A Window iterates over the list starting from its head, and
+returns two nodes that are logically in the list. Any nodes that are marked for removal
+which are encountered during this iteration, are physically removed from the list. This
+removal is achieved using an atomic \texttt{compareAndSet} instruction, so that no two
+threads can be removing the same node at the same time. When a thread attempts to
+remove a node that is already being removed by another thread, it starts iterating back
+at the head of the list (because its reference to the next node has become invalid).
+
+Apart from usage in the the iteration, the \texttt{compareAndSet} instruction is also
+used to update references from nodes to their successors. The instruction insures that
+the reference is not changed by another thread in between reading its value, and
+updating it.
 
 \subsection{Performance}
 
-Performance Evaluation of LFL.
+
 
 \section{LockFreeTree}
 
