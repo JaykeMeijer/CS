@@ -20,7 +20,6 @@ Taddeüs Kroes, 2526902, tks590, \url{taddeuskroes@gmail.com}}
 \begin{document}
 
 \maketitle
-\pagebreak
 
 \tableofcontents
 \pagebreak
@@ -105,7 +104,7 @@ For the addition and removal of nodes we use standard BST algorithms
 As with the CoarseGrainedList, the performance will be poor when a lot of
 threads try to perform operations simultaneously.
 
-The locating of the affected nodes will be faster, since we are dealing
+The act of locating affected nodes will be faster, since we are dealing
 with a binary tree instead of a list. Therefore the overall performance
 will be better, due to the fact that the basic algorithm is more effective.
 
@@ -173,23 +172,25 @@ child nodes next instead of the singly-linked next node.
 
 \subsection{Performance}
 
-With the FineGrainedList the problem was that while traversing the list, one
-thread has to wait for other threads that perform their tasks. With the tree
-this happens less often. When the thread A operates in another subtree than
-thread B, these threads do not interfere with each other.
+With the FineGrainedList the problem is that while traversing the list, one thread has to
+wait for other threads that perform their tasks at some node with a lower value. In a tree
+structure, this happens less often. When the thread A operates in another subtree than
+thread B, A and B not interfere with each other. Thus, the tree structure lowers the
+possibility of a ``congestion'' during data structure traversal of simultaneous threads.
 
-This effect is strongest when the tree is well balanced. Like with the
-CoarseGrainedTree, when the tree is completely unbalanced it basically is
-a linked list. All the advantages of the tree structure are then lost.
+This effect is strongest when the tree is well balanced and contains a significant number
+of elements. Like with the CoarseGrainedTree, if the tree is completely unbalanced it
+basically is a linked list. The advantage of the tree structure is then lost. When the
+tree contains a large number of elements, the change of a congestion occurring at a locked
+element is smaller than in a tree containing fewer elements.
 
 To maximize the advantage of a tree structure as opposed to a linked list, the
 number of threads should be small in comparison to the number of elements in the
-data structure. Assuming that the tree will be balanced to some degree due to the
-randomness of the elements added to the tree, there will be minimum interference
-between threads.
+data structure. If the tree is balanced to some degree due to the randomness of the
+elements added to the tree, there should be minimum interference between threads.
 
-The root of the tree and first few levels of nodes can be expected to be a
-bottleneck, since these will be visited by each thread for every operation.
+The root of the tree and first few levels of nodes can be expected to be a bottleneck,
+since these will be visited (and thus locked) by each thread for every operation.
 
 \section{LockFreeList}
 
@@ -204,14 +205,14 @@ the FineGrainedList does. However, whereas the FineGrainedList locks a node befo
 reading its value, the LockFreeList does not. To still be able to guarantee that a
 node of which the value has been read was not removed by another thread, all nodes
 have a mark. The mark indicates whether a node has been logically removed from the
-list (but not physically). By not physically removing the node, traversal through the
-list by other threads is not interrupted. The physical removal is done by the next
-thread that iterates over the node, using an abstraction of the pair-wise iteration
-called a \emph{Window}. A Window iterates over the list starting from its head, and
-returns two nodes that are logically in the list. Any nodes that are marked for removal
-which are encountered during this iteration, are physically removed from the list. This
-removal is achieved using an atomic \texttt{compareAndSet} instruction, so that no two
-threads can be removing the same node at the same time. When a thread attempts to
+list (but not physically). The removal operation will also attempt to remove the node
+physically. When this fails, the physical removal is done by the next thread that iterates over the node,
+using an abstraction of the pair-wise iteration called a \emph{Window}. A Window iterates
+over the list starting from its head, and returns two nodes that are logically in the
+list. Any nodes that are marked for removal which are encountered during this iteration,
+are physically removed from the list. This removal is achieved using an atomic
+\texttt{compareAndSet} instruction, so that no two threads can be removing the same node 
+at the same time. When a thread attempts to
 remove a node that is already being removed by another thread, it starts iterating back
 at the head of the list (because its reference to the next node has become invalid).
 
@@ -244,20 +245,61 @@ The LockFreeTree uses compare-and-set instructions instead of locks.
 
 \subsection{Design}
 
-Design of LFT.
+The tree used for the LockFreeTree is slightly different than the tree used for the
+locking tree. All the values are stored in leaf nodes and the inner nodes are only used
+for navigating through the tree.
+
+To simulate the locking of a node, the same mechanism is used as with the LockFreeList,
+namely marking nodes. However, in this case several pointers need to be updated, which 
+cannot be done atomically. Due to this, a boolean MARK value is not sufficient. The flag
+used is therefore a state. The following states are possible:
+\begin{itemize}
+\item CLEAN - No thread is currently performing any operation that affects this node.
+\item IFLAG - A thread is currently performing an insert that affects this node.
+\item DFLAG - A thread is currently performing a delete that affects this node.
+\item MARKED - This node is to be deleted.
+\end{itemize}
+
+When a thread cannot set the flag to what is needed for its operation, because some other
+thread has already set the flag, the current thread will perform the operations that still
+have to happen. To be able to help with the operation, an info record is created that 
+stores all the needed information to complete the operation.
+
+This method does mean that possibly some work is performed several times. However, if
+the original thread crashed or is very slow, it will ensure that the work will still be
+done and other threads do not have to wait, but can make themselves useful.
 
 \subsection{Performance}
 
-Performance Evaluation of LFT.
+There will be memory overhead in comparison to the other tree implementations for the
+internal nodes in the tree, because all values are stored in leaf nodes. When a tree
+contains a lot of elements, traversal to a leaf node will take longer than traversal in a
+tree in which the internal nodes contain values too (assuming that the thread is not
+blocked during the traversal). If at the same time there are few threads, this traversal
+overhead may cause poor performance. For example, a single thread operating on a
+CoarseGrainedTree containing a million elements should perform better than the same
+operation on a LockFreeTree. This effect is enforced by the overhead of CAS operations of
+the LockFreeTree, which do not occur in the CoarseGrainedTree and FineGrainedTree.
+However, if there are enough threads in relation to the number of elements, the
+LockFreeTree should perform better than all previously described data structures. After
+all, the data structure is wait-free, whereas the other tree implementations require
+threads to wait for each other while traversing the tree. Assuming that the traversal
+overhead is not very large, the LockFreeTree should perform better than the other data
+structures in most situations (when the ratio \emph{number of threads / number of
+elements} is not too high).
 
-\begin{thebibliography}{9}
+The LockFreeList should scale very well with the number of threads. Each thread is always doing some work instead of waiting for others to finish their work, which makes an operation as fast as the fastest thread executing it. It makes no difference if there are ten or a thousand threads performing on the same subtree at the same time, because there is no locking overhead. The number of threads should only increase performance, especially in trees containing many elements. In the best case, the threads will likely spread over the different subtrees, thus not interfering with each other.
+
+Though the same operation may be performed multiple times at the same time by different threads in case of interference, overall performance should not be affected by this redundant work (since the other option is to wait for another thread and do no work at all, which results in lost time anyway).
+
+\begin{thebibliography}{}
 
 \bibitem{insert}
     Binary Search Tree: Insertion
     \url{http://www.algolist.net/Data_structures/Binary_search_tree/Insertion}
     
 \bibitem{delete}
-    Bianry Search Tree: Removal
+    Binary Search Tree: Removal
     \url{http://www.algolist.net/Data_structures/Binary_search_tree/Removal}
   
 \end{thebibliography}
