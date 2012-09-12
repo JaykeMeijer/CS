@@ -141,7 +141,7 @@ However, there are some remarks to be made. The result of the
 while traversing the list. This causes a delay when elements are added/removed
 in ascending order. Each thread will then still have to wait on the thread in
 front of him. The only advantage over the CoarseGrainedList is that while
-its waiting for the other list, it is already on its way to the proper node.
+it is waiting for the other list, it is already on its way to the proper node.
 
 The advantage of the FineGrainedList as opposed to the CoarseGrainedList will
 probably grow with the size of the list. In the FineGrainedList, part of an
@@ -161,10 +161,10 @@ will be locked for add or remove operations, as with the FineGrainedList.
 
 \subsection{Design}
 
-The design of the lock mechanism in the FineGrainTree is comparable with that
-of the FineGrainList. The next node visited is locked before the lock on the
-current node can be released. The difference is that it locks one of the child
-nodes next instead of the single next node.
+The design of the lock mechanism in the FineGrainTree is similar to that of the
+FineGrainList. The next node visited is locked before the lock on the current
+node can be released. The difference is that the current node locks one of its
+child nodes next instead of the singly-linked next node.
 
 \subsection{Performance}
 
