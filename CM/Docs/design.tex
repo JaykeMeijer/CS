@@ -175,15 +175,16 @@ thread B, these threads do not interfere with each other.
 
 This effect is strongest when the tree is well balanced. Like with the
 CoarseGrainedTree, when the tree is completely unbalanced it basically is
-a linked list. All the advantages of the tree are then lost.
+a linked list. All the advantages of the tree structure are then lost.
 
-For the best performance, the number of threads should be a lot smaller than
-the number of elements in the data structure. This means that there are
-enough subtrees and therefore less interference between threads. Of course,
-the head and first few levels of nodes can be expected to be the bottleneck
-in this, since these will be visited by each thread on every operation.
-Therefore the number of threads should not be too big. A maximum performance
-can be expected after a certain number of threads.
+To maximize the advantage of a tree structure as opposed to a linked list, the
+number of threads should be small in comparison to the number of elements in the
+data structure. Assuming that the tree will be balanced to some degree due to the
+randomness of the elements added to the tree, there will be minimum interference
+between threads.
+
+The root of the tree and first few levels of nodes can be expected to be a
+bottleneck, since these will be visited by each thread for every operation.
 
 \section{LockFreeList}
 
