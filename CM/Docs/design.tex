@@ -2,13 +2,6 @@
 \usepackage[english]{babel}
 \usepackage{alltt,amsmath,hyperref,graphicx}
 
-% Link colors
-\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=DarkGreen}
-
-% Set paragraph indentation
-\parindent 0pt
-\parskip 1.0ex plus 0.5ex minus 0.2ex
-
 \title{Concurrency and Multithreading - Design}
 
 \author{Jayke Meijer, 2526284, \url{jayke.meijer@gmail.com} \\
@@ -96,11 +89,8 @@ The locking mechanism remains the same: the entire tree is locked before
 an addition or removal operation is performed. Again, the operation performed
 during the lock includes the act of locating the affected nodes.
 
-For the addition of nodes we use the algorithm described here: \\
-\url{http://www.algolist.net/Data_structures/Binary_search_tree/Insertion}.
-
-Node removal is done using the algorithm described here: \\
-\url{http://www.algolist.net/Data_structures/Binary_search_tree/Removal}.
+For the actual addition and removal of nodes we use standard BST
+algorithms\cite{insert}\cite{delete}.
 
 \subsection{Performance}
 
@@ -117,10 +107,10 @@ However, the average complexity will be better than that, and better than the
 average complexity of the linked list.
 
 If the tree is completely balanced, the complexity will be
-$\bigoh(log n)$.
+$\bigoh(\log n)$.
 
 Once again, these complexities are to be multiplied with the number of
-threads, giving $\bigoh(n * m)$ and $\bigoh(log(n) * m)$
+threads, giving $\bigoh(n * m)$ and $\bigoh(\log(n) * m)$
 respectively.
 
 \section{FineGrainedList}
@@ -219,7 +209,7 @@ at the head of the list (because its reference to the next node has become inval
 
 Apart from usage for traversal, the \texttt{compareAndSet} instruction is also used
 to update references from nodes to their successors. The instruction insures that the
-reference is not changed by another thread in between reading its value, and updating
+reference is not changed by another thread in between reading its value and updating
 it.
 
 \subsection{Performance}
@@ -251,5 +241,17 @@ Design of LFT.
 \subsection{Performance}
 
 Performance Evaluation of LFT.
+
+\begin{thebibliography}{9}
+
+\bibitem{insert}
+    Binary Search Tree: Insertion
+    \url{http://www.algolist.net/Data_structures/Binary_search_tree/Insertion}
+    
+\bibitem{delete}
+    Bianry Search Tree: Removal
+    \url{http://www.algolist.net/Data_structures/Binary_search_tree/Removal}
+  
+\end{thebibliography}
 
 \end{document}
