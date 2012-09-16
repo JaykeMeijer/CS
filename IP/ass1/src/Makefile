@@ -9,7 +9,7 @@ mysh1: mysh1.o
 mysh2: mysh2.o
 	$(CC) mysh2.c -o mysh2 $(CFLAGS)
 	
-mysh3:
+mysh3: mysh3.o
 	$(CC) mysh3.c -o mysh3 $(CFLAGS)
 
 clean: 	
