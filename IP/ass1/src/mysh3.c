@@ -42,7 +42,7 @@ void handle_input(char input[]) {
  */
 void handle_double_input(char input[]) {
     char *temp, *commands[2];
-    int i, pipe;
+    int i, pipe[2];
     pid_t pid1, pid2;
 
     if(check_input(input)) {
