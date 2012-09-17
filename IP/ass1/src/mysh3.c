@@ -16,7 +16,7 @@ void handle_input(char input[]) {
     pid_t pid;
     char clean_input[128];
     char *input_array[64];
-    char *temp;		
+    char *temp;
     char buffer[128];
     int i = 0;
 
@@ -93,11 +93,16 @@ void handle_double_input(char input[]) {
                 exit(1);
             }
             else {
+                /* 
+                 * Both the second process and the parent do not write on the
+                 * pipe, so close it.
+                 */
+                close(p[1]); // close write end of the pipe
+
                 /* Parent process create second process. */
                 pid2 = fork();
 
                 if(pid2 == 0) {
-                    close(p[1]); // close write end of the pipe
                     dup2(p[0], STDIN_FILENO); // duplicate pipe and input
                     handle_input(commands[1]);
                 }
@@ -107,12 +112,8 @@ void handle_double_input(char input[]) {
                 }
                 else {
                     /* Parent process wait untill both children are done. */
-                    while(!process1 || !process2) {
-                        if(waitpid(pid1, NULL, WNOHANG) > 0)
-                            process1 = 1;
-                        if(waitpid(pid2, NULL, WNOHANG) > 0)
-                            process2 = 1;
-                    }
+                    waitpid(pid2, NULL, 0);
+                    waitpid(pid1, NULL, 0);
                 }
             }
         }
