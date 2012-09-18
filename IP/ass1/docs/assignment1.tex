@@ -23,7 +23,9 @@
 
 \section{Used platform}
 
-
+All code is tested and executed on a machine running Ubuntu 12.04. The used version of
+\emph{gcc} is 4.6.3. The JDK used is OpenJDK IcedTea6 1.11.4. The java version is
+1.6.0\_24.
 
 \section{Writing a Micro-Shell}
 
@@ -65,7 +67,9 @@ the initial parent process. See also figure \ref{tree}.
 
 The second option is used in this program. This allows the parent to create the second
 process while the first is initializing itself. It also is more true to what seems to 
-happen, the parent `owns' both programs, the first child does not own the second.
+happen, the parent `owns' both programs, the first child does not own the second. The 
+third advantage is that the parent now knows the process id of both children, allowing it
+to wait until both children are finished.
 
 \subsection{Answers to the questions}
 
@@ -76,7 +80,7 @@ happen, the parent `owns' both programs, the first child does not own the second
             first process to the input of the second. The shell has to wait until both
             child processes are finished before being able to accept another command.
     \item \textbf{Question B} You can not implement a shell program that uses threads
-            instead of processes. To be able to execute a new process, the \texttt{exec}
+            instead of processes. To be able to execute a new process, the \texttt{exec()}
             call has to be used. This call takes over the entire process. Since threads
             are all part of the same process, this will end all threads of the shell 
             program, effectively killing the shell.
@@ -85,5 +89,48 @@ happen, the parent `owns' both programs, the first child does not own the second
             of its parent, \texttt{cd} is not possible in the shell that was written for 
             this assignment.
 \end{itemize}
+
+\section{Synchronization}
+
+\subsection{Part a}
+
+The program simultaneously writes the sentences "Hello world" and "Bonjour monde", one
+character at a time. It does this by forking. The child created by this fork prints the
+first sentence, the parent the second.
+
+There is no synchronization, so both messages will be printed at the same time, which
+means the messages will be mixed up.
+
+\textbf{Question D} Mutual exclusion is needed. Only one of the process can access the
+\texttt{display} function at a time. This will ensure that the message of one of processes
+is printed before the other can start printing. The primitive needed for this to work is a
+lock. A lock will ensure that once a process has entered a certain part of code (the
+\emph{critical section}. If another process tries to enter that pice of code, it is forced
+to wait until the other process is done.
+
+A lock has to functions, \texttt{lock()} and \texttt{unlock()}. When you want to enter the
+critical section you call the \texttt{lock()} function. This will either allow you to
+enter or block until you are allowed to enter. Once you are done you call
+\texttt{unlock()} and the lock is released. Other processes are now allowed to enter (one
+at a time of course).
+
+\subsection{Part b}
+\textbf{Question E} In this exercise both processes have to ``cooperate'' to print the
+proper message. This means that the lock mechanism used in the previous exercise is not
+applicable here. The lock only ensures that the processes do not print simultaneously, but
+does not guarantee an order in which this happens.
+
+The proper synchronization variable to use is a flag, or more specifically two. These 
+flags allow synchronization between the processes, not just mutual exclusion.
+
+When the first process has printed \texttt{``ab''}, it raises flag 1 to signal to process
+two that it should now print \texttt{``cd\textbackslash n''}. It then waits for flag 2 to
+be raised.
+
+Process two waits for the flag of process one to be raised. When it is raised, it prints
+the string, lowers flag 1 and raises flag 2. Then it waits for flag 1 to be raised again.
+
+This way, the processes take turns printing, ensuring that the order in which they print
+is as required.
 
 \end{document}
