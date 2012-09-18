@@ -6,7 +6,10 @@ int main(int argc, char *argv[]) {
 
     while(1) {
         printf("> ");
-        fgets(input, sizeof(input), stdin);
+        if(!fgets(input, sizeof(input), stdin)) {
+            perror("Failed to read input");
+            exit(1);
+        }
         handle_double_input(input);
     }
 }
