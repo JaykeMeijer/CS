@@ -1,0 +1,10 @@
+#!/bin/bash
+if [ -f Syn1.class ];
+    then
+        java Syn1;
+    else
+        make syn1;
+        java Syn1;
+fi
+
+

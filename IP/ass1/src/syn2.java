@@ -1,4 +1,4 @@
-class Synthread2 {
+class Syn2 {
     public static Integer sem1 = 0, sem2 = 0;
 
     public static void main(String[] args) {
@@ -40,18 +40,18 @@ class MyThread2 extends Thread {
 
     public void run() {
         for(int i = 0; i < 10; i++) {
-            synchronized (Synthread2.sem1) {
+            synchronized (Syn2.sem1) {
                 try {
-                    Synthread2.sem1.wait();
+                    Syn2.sem1.wait();
                 }
                 catch(InterruptedException e) {
                     System.out.println("InterruptedExeption occured, exiting");
                     System.exit(1);
                 }
             }
-            Synthread2.display("cd\n");
-            synchronized (Synthread2.sem2) {
-                Synthread2.sem2.notify();
+            Syn2.display("cd\n");
+            synchronized (Syn2.sem2) {
+                Syn2.sem2.notify();
             }
         }
     }

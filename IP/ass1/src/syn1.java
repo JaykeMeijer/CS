@@ -1,5 +1,5 @@
 /* The primary program, that will invoke the other thread. */
-class Synthread1 {
+class Syn1 {
     static Integer lock = 0;
 
     public static void main(String[] args) {
@@ -31,8 +31,8 @@ class MyThread extends Thread {
 
     public void run() {
         for(int i = 0; i < 10; i++)
-            synchronized(Synthread1.lock) {
-                Synthread1.display("Hello world\n");
+            synchronized(Syn1.lock) {
+                Syn1.display("Hello world\n");
             }
     }
 }

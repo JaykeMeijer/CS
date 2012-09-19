@@ -3,7 +3,7 @@ CFLAGS = -O2 -std=c99
 FLAGS_SYN = -pthread -D _BSD_SOURCE
 JC = javac
 
-all: mysh1 mysh2 mysh3 synthread1 synthread2 synthread1j synthread2j
+all: mysh1 mysh2 mysh3 synthread1 synthread2 syn1 syn2
 
 mysh1: mysh1.c mysh1.h
 	$(CC) mysh1.c -o mysh1 $(CFLAGS)
@@ -20,11 +20,11 @@ synthread1: synthread1.c synthread1.h
 synthread2: synthread2.c synthread2.h
 	$(CC) synthread2.c -o synthread2 $(CFLAGS) $(FLAGS_SYN)
 
-synthread1j: synthread1.java
-	$(JC) synthread1.java
+syn1: syn1.java
+	$(JC) syn1.java
 
-synthread2j: synthread2.java
-	$(JC) synthread2.java
+syn2: syn2.java
+	$(JC) syn2.java
 
 clean:
 	rm -f *.o
