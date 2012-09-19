@@ -123,11 +123,28 @@ void handle_double_input(char input[]) {
     }
 }
 
-/* Check if the input is a (series of) command(s) */
+/* Check if the input is a (series of) valid command(s) */
 int check_input(char input[]) {
+    char *cd, *dir;
+
     if (!strcmp(input, "exit\n"))
         /* Command to exit the shell was given. */
         exit(0);
+    /* If the first characters are "cd", than change directory. This has to be
+     * done in this work around fashion, since the actual splitting of the
+     * command is done after the fork instruction in my design. This makes it 
+     * impossible to change the directory for the shell program, since changing
+     * the directory of the child does not change the directory of the parent.
+     */
+    else if (input[0] == 'c' && input[1] == 'd') {
+        cd = strtok(input, " ");
+        dir = strtok(NULL, " ");
+        dir[strlen(dir) - 1] = '\0';
+        if(chdir(dir)) {
+            perror("Failed to change directory");
+            exit(1);
+        }
+    }
     else if(strlen(input) <= 1) {
         /* If an empty line or only [enter] was given, do not try to execute.*/
         printf("\n");

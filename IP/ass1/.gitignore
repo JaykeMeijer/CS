@@ -4,7 +4,7 @@ assignment1.pdf
 *.log
 *.gz
 *.out
-*~
+*~*
 *.o
 mysh?
 synthread?

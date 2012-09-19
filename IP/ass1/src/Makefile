@@ -34,3 +34,4 @@ clean:
 	rm -f synthread1
 	rm -f synthread2
 	rm -f *.class
+	rm -f *~*
