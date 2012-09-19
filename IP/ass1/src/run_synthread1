@@ -1,0 +1,10 @@
+#!/bin/bash
+if [ -f Synthread1.class ];
+    then
+        java Synthread1;
+    else
+        make synthread1j;
+        java Synthread1;
+fi
+
+

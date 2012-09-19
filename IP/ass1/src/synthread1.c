@@ -3,7 +3,10 @@
 void display(char *str) {
     char *tmp;
     for (tmp=str; *tmp; tmp++) {
-        write(1, tmp, 1);
+        if(!write(1, tmp, 1)) {
+            perror("Failed to write to stdout");
+            exit(1);
+        }
         usleep(100);
     }
 }
