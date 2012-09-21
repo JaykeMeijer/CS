@@ -119,6 +119,12 @@ enter or block until you are allowed to enter. Once you are done you call
 \texttt{unlock()} and the lock is released. Other processes are now allowed to enter (one
 at a time of course).
 
+The program \texttt{syn1} does this. As a lock, a semaphore is used. By decreasing the 
+value of the semaphore to zero the display function is locked. Another process trying to
+decrease the value of the semaphore sees that it is already zero and it will wait until 
+the first process increases the semaphore again, so the second thread is now allowed to
+lower it and enter the critical section.
+
 \subsection{Part b}
 \textbf{Question E} In this exercise both processes have to ``cooperate'' to print the
 proper message. This means that the lock mechanism used in the previous exercise is not
@@ -137,6 +143,11 @@ the string, lowers flag 1 and raises flag 2. Then it waits for flag 1 to be rais
 
 This way, the processes take turns printing, ensuring that the order in which they print
 is as required.
+
+This is done in the program \texttt{syn2}. As flags, two semaphores are used. When the 
+semaphore is zero the flag is down and a process can ``raise'' it by increasing it to one. 
+The other process can wait while the flag is down and only proceed when it is raised, ie 
+the semaphore is increased to one.
 
 \subsection{Part c}
 
