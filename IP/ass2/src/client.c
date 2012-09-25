@@ -10,45 +10,55 @@
 
 int main(int argc, char *argv[]) {
     int sockfd, nread;
-    struct sockaddr_in serv_addr;
-    struct hostent *server;
-    char buf[15];
+    struct addrinfo hints;
+    struct addrinfo *result, *rp;
+    int recv;
 
     if(argc == 1) {
         printf("Usage: ./client [address of server]\n");
         exit(1);
     }
 
-    /* Set up the servers address. */
-    server = gethostbyname(argv[1]);
-    bzero((char*) &serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(1337);
-    bcopy((char*) server->h_addr, (char*)&serv_addr.sin_addr.s_addr, \
-        server->h_length);
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = 0;
+    hints.ai_protocol = 0;
 
-    /* Create a socket. */
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if(sockfd < 0) {
-        perror("Error creating socket");
+    if(getaddrinfo(argv[1], "1337", &hints, &result) != 0) {
+        perror("Failed to get addressinfo");
         exit(1);
     }
 
-    /* Connect to the server. */
-    if(connect(sockfd, (struct sockaddr *) &serv_addr, 
-            sizeof(struct sockaddr_in)) < 0) {
-        perror("Cannot connect");
+    /* Try all returned addresses. */
+    for(rp = result; rp != NULL; rp = rp->ai_next) {
+        /* Create a socket. */
+        sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if(sockfd < 0) {
+            perror("Error creating socket");
+            exit(1);
+        }
+
+        /* Connect to the server. */
+        if(connect(sockfd, rp->ai_addr, rp->ai_addrlen) != -1)
+            break;
+    }
+
+    if(rp == NULL) {
+        perror("Failed to connect");
         exit(1);
     }
+
+    freeaddrinfo(result);
 
     /* Read the response of the server. */
-    nread = read(sockfd, buf, 14);
+    nread = read(sockfd, &recv, 4);
     if(nread < 0) {
         perror("Error reading from socket");
         exit(1);
     }
 
-    printf("I recieved: %i\n", atoi(buf));
+    printf("I recieved: %i\n", recv);
 
     /* Close the socket and exit the program. */
     close(sockfd);

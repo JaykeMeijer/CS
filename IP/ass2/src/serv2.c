@@ -14,6 +14,8 @@ int main(int argc, char *argv[]) {
     int sockfd, newsockfd, res, optval, counter = 0;
     struct sockaddr_in addr, addrc;
     socklen_t addrlen;
+    
+    signal(SIGCHLD, SIG_IGN);
 
     /* Create the listening socket. */
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -59,12 +61,20 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
 
-        /* Write the counter to the connected client. */
-        writen(newsockfd, &counter, sizeof(counter));
-        counter++;
+        if(fork() == 0) {
+            /* Write the counter to the connected client. */
+            writen(newsockfd, &counter, sizeof(counter));
 
-        /* Close this socket and go again. */
-        close(newsockfd);
+            /* Close this socket and go again. */
+            close(newsockfd);
+            exit(0);
+        }
+        else {
+            /* Increment the counter, close the socket from this process and
+             * prepare to go again. */
+            counter++;
+            close(newsockfd);
+        }
     }
 
     return 0;
