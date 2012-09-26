@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 
     /* Prepare the servers address administration. */
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(1339);
+    addr.sin_port = htons(1337);
     addr.sin_addr.s_addr = INADDR_ANY;
 
     /* Bind the socket to allow it to listen */

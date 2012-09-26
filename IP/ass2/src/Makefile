@@ -14,12 +14,14 @@ serv3: serv3.c
 client: client.c
 	$(CC) client.c -o client $(CFLAGS)
 
-talk: talk.c
-	$(CC) talk.c -o talk $(CFLAGS) -pthread
+talk: talk.c talk.h
+	$(CC) talk.c talk.h -o talk $(CFLAGS) -pthread
 
 clean:
 	rm -f *.o
 	rm -f serv1
 	rm -f serv2
+	rm -f serv3
 	rm -f client
+	rm -f talk
 	rm -f *~*

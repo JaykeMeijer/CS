@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     hints.ai_flags = 0;
     hints.ai_protocol = 0;
 
-    if(getaddrinfo(argv[1], "1339", &hints, &result) != 0) {
+    if(getaddrinfo(argv[1], "1337", &hints, &result) != 0) {
         perror("Failed to get addressinfo");
         exit(1);
     }
