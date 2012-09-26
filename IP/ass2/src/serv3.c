@@ -7,36 +7,70 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+#define NR_CHILD 3
 
 int writen(int, const void*, size_t);
-void child_function(int*);
+void child_function(int, int*);
 
 int main(int argc, char *argv[]) {
-    int sockfd, newsockfd, res, optval, p[2];
-    struct sockaddr_in addr, addrc;
-    socklen_t addrlen;
+    int sockfd, newsockfd, res, optval, i, children[NR_CHILD], parent, new_pid;
+    int counter, *shared_counter;
+    char input[32];
+    struct sockaddr_in addr;
 
-    /* Create pipe. */
-    if(pipe(p) < 0) {
-        perror("Failed to create pipe.");
+    /* Create listening socket. */
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if(sockfd < 0) {
+        perror("Error creating socket");
         exit(1);
     }
 
-    if(fork() == 0) {
-        close(p[1]);
-        child_function(p);
-        exit(0);
+    /* Prepare the servers address administration. */
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(1339);
+    addr.sin_addr.s_addr = INADDR_ANY;
+
+    /* Bind the socket to allow it to listen */
+    if(bind(sockfd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+        perror("Error binding socket");
+        exit(1);
     }
-    else {
-        close(p[0]);
 
-        /* Create the listening socket. */
-        sockfd = socket(AF_INET, SOCK_STREAM, 0);
-        if(sockfd < 0) {
-            perror("Error creating socket");
-            exit(1);
+    /* Listen on sockfd for new connections. */
+    if(listen(sockfd, 5) < 0) {
+        perror("Error while listening");
+        exit(1);
+    }
+
+    /* Create and attach the counter in the shared memory. */
+    counter = shmget(IPC_PRIVATE, sizeof(int), 0600);
+    shared_counter = (int *) shmat(counter, 0, 0);
+
+    for(i = 0; i < NR_CHILD; i++) {
+        new_pid = fork();
+        if(new_pid == 0) {
+            parent = 0;
+            child_function(sockfd, shared_counter);
+            /* Allow the reusing of the socket, so the server can be restarted
+             * immediatly. */
+            optval = 1;
+            if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval,
+                    sizeof(optval)) < 0) {
+                perror("Setting sockopt fails");
+                exit(1);
+            }
         }
+        else {
+            parent = 1;
+            children[i] = new_pid;
+            printf("Child %i created\n", i);
+        }
+    }
 
+    if(parent) {
         /* Allow the reusing of the socket, so the server can be restarted
          * immediatly. */
         optval = 1;
@@ -46,75 +80,58 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
 
-        /* Prepare the servers address administration. */
-        addr.sin_family = AF_UNIX;
-        addr.sin_port = htons(1337);
-        addr.sin_addr.s_addr = INADDR_ANY;
-
-        /* Bind the socket to allow it to listen */
-        if(bind(sockfd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-            perror("Error binding socket");
-            exit(1);
-        }
-
-        /* Repeatedly listen for a new connection and handle it. */
+        /* Wait for a kill command and kill the children. */
         while(1) {
-            res = listen(sockfd, 5);
-            if(res < 0) {
-                perror("Error while listening");
+            if(!fgets(input, sizeof(input), stdin)) {
+                perror("Failed to read input");
                 exit(1);
             }
-
-            addrlen = sizeof(addrc);
-
-            /* Accept the new connection. */
-            newsockfd = accept(sockfd, (struct sockaddr *) &addrc, &addrlen);
-            if(newsockfd < 0) {
-                perror("Failed to accept connection");
-                exit(1);
-            }
-
-            printf("Created socket fd: %i\n", newsockfd);
-
-            /* Sent socket fd to child */
-            if(write(p[1], &newsockfd, sizeof(newsockfd)) < 0) {
-                perror("Failed to read socket fd from pipe");
-                exit(1);
-            }
+            if (!strcmp(input, "exit\n"))
+                break;
         }
+
+        for(i = 0; i < NR_CHILD; i++)
+            kill(children[i], SIGKILL);
+
+        /* Wait for the child processes to stop. */
+        for(i = 0; i < NR_CHILD; i++)
+            waitpid(children[i], NULL, 0);
+
+        /* Delete the shared counter. */
+        shmdt(shared_counter);
+        shmctl(counter, IPC_RMID, NULL);
     }
 
     return 0;
 }
 
 /* The function performed by the child process. */
-void child_function(int p[2]) {
-    int newsockfd;
-    int counter = 0;
+void child_function(int sockfd, int *shared_counter) {
+    int newsockfd, res;
+    socklen_t addrlen;
+    struct sockaddr_in addrc;
 
-    printf("Child process operational\n");
+    addrlen = sizeof(addrc);
 
+    /* Repeatedly listen for a new connection and handle it. */
     while(1) {
-        printf("Waiting for write on pipe\n");
-
-        /* Receive the socket fd from the parent process. */
-        if(read(p[0], &newsockfd, sizeof(newsockfd)) < 0) {
-            perror("Failed to read socket fd from pipe");
+        /* Accept the new connection. */
+        newsockfd = accept(sockfd, (struct sockaddr *) &addrc, &addrlen);
+        if(newsockfd < 0) {
+            perror("Failed to accept connection");
             exit(1);
         }
 
-        printf("Received fd: %i\n", newsockfd);
-
-        /* Write the counter to the connected client. */
-        if(writen(newsockfd, &counter, sizeof(counter)) < 0) {
+        if(writen(newsockfd, shared_counter, sizeof(int)) < 0) {
             perror("Failed to write to socket");
             exit(1);
         }
-        counter++;
+        *shared_counter = *shared_counter + 1;
 
-        /* Close this socket and go again. */
         close(newsockfd);
     }
+
+    shmdt(shared_counter);
 }
 
 /* 
@@ -131,7 +148,8 @@ ssize_t writen(int fd, const void *vptr, size_t n) {
     ptr = vptr;
     nleft = n;
     while (nleft > 0) {
-        if (nwritten = write(fd, ptr, nleft) <= 0 ) {
+        nwritten = write(fd, ptr, nleft);
+        if (nwritten <= 0 ) {
             if (errno == EINTR)
                 nwritten = 0; /* and call write() again */
             else
