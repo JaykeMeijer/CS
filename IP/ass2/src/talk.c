@@ -14,7 +14,6 @@ int writen(int, const void*, size_t);
 int readn(int, void*, size_t);
 void writethread();
 void *receivethread();
-int stop = 0;
 int sockfd;
 
 int main(int argc, char *argv[]) {
@@ -118,10 +117,7 @@ int main(int argc, char *argv[]) {
     /* Close the socket. */
     close(sockfd);
 
-    stop = 1;
-    printf("Waiting for other thread to join\n");
-
-    /* Wait for the other thread to be done. */
+    /* Wait for the other thread to join. */
     pthread_join(thread_id, NULL);
 
     /* Destroy all created objects. */
@@ -144,7 +140,8 @@ ssize_t writen(int fd, const void *vptr, size_t n) {
     ptr = vptr;
     nleft = n;
     while (nleft > 0) {
-        if (nwritten = write(fd, ptr, nleft) <= 0 ) {
+        nwritten = write(fd, ptr, nleft);
+        if (nwritten < 0 ) {
             if (errno == EINTR)
                 nwritten = 0; /* and call write() again */
             else
@@ -167,25 +164,15 @@ ssize_t readn(int fd, void *vptr, size_t n) {
 }
 
 void writethread() {
-    char input[128] = "";
-
-    printf("> ");
-    if(!fgets(input, sizeof(input), stdin)) {
-        perror("Failed to read input");
-        exit(1);
-    }
+    char input[256] = "";
 
     while(1) {
-        printf("> ");
         if(!fgets(input, sizeof(input), stdin)) {
             perror("Failed to read input");
             exit(1);
         }
 
-        if(strcmp(input, "!quit\n") == 0)
-            break;
-
-        if(writen(sockfd, &input, sizeof(input)) < 0) {
+        if(writen(sockfd, &input, strlen(input) * sizeof(char)) < 0) {
             perror("Failed to write\n");
             exit(1);
         }
@@ -194,9 +181,9 @@ void writethread() {
 
 void *receivethread() {
     int bread;
-    char buffer[128]= "";
+    char buffer[256]= "";
 
-    while(!stop) {
+    while(1) {
         bread = readn(sockfd, &buffer, sizeof(buffer));
         if(bread < 0) {
             perror("Failed to read from other");
@@ -206,7 +193,7 @@ void *receivethread() {
             perror("Other closed socket");
             exit(1);
         }
-        printf("read %d bytes\n", bread);
-        printf("Other: %s\n> ", buffer);
+        buffer[bread - 1] = '\0';
+        printf("-> %s\n", buffer);
     }
 }
