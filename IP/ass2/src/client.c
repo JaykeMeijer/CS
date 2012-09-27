@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    printf("I recieved: %i\n", recv);
+    printf("I recieved: %i\n", ntohl(recv));
 
     /* Close the socket and exit the program. */
     close(sockfd);

@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -O2 -std=c99 -D _GNU_SOURCE
-all: serv1 client
+all: serv1 client serv2 serv3 talk
 
 serv1: serv1.c
 	$(CC) serv1.c -o serv1 $(CFLAGS)

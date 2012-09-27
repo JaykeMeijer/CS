@@ -11,10 +11,10 @@
 int writen(int, const void*, size_t);
 
 int main(int argc, char *argv[]) {
-    int sockfd, newsockfd, res, optval, counter = 0;
+    int sockfd, newsockfd, res, optval, counter = 0, temp;
     struct sockaddr_in addr, addrc;
     socklen_t addrlen;
-    
+
     signal(SIGCHLD, SIG_IGN);
 
     /* Create the listening socket. */
@@ -63,7 +63,8 @@ int main(int argc, char *argv[]) {
 
         if(fork() == 0) {
             /* Write the counter to the connected client. */
-            writen(newsockfd, &counter, sizeof(counter));
+            temp = htonl(counter);
+            writen(newsockfd, &temp, sizeof(counter));
 
             /* Close this socket and go again. */
             close(newsockfd);

@@ -9,22 +9,44 @@
 #include <errno.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/sem.h>
 
 #define NR_CHILD 3
 
-int writen(int, const void*, size_t);
-void child_function(int, int*);
+struct sembuf up = {0, 1, 0};
+struct sembuf down = {0, -1, 0};
+
+ssize_t writen(int, const void*, size_t);
+void child_function();
+void exit_neatly();
+
+int children[NR_CHILD];
+int counter, *shared_counter, sockfd, sem, semaccept;
 
 int main(int argc, char *argv[]) {
-    int sockfd, newsockfd, res, optval, i, children[NR_CHILD], parent, new_pid;
-    int counter, *shared_counter;
+    int optval, i, parent, new_pid;
     char input[32];
+    unsigned short semargs[1] = {1};
     struct sockaddr_in addr;
+
+    sem = semget(IPC_PRIVATE, 1, 0600);
+    semctl(sem, 0, SETALL, semargs);
+    semaccept = semget(IPC_PRIVATE, 1, 0600);
+    semctl(semaccept, 0, SETALL, semargs);
 
     /* Create listening socket. */
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if(sockfd < 0) {
         perror("Error creating socket");
+        exit(1);
+    }
+
+    /* Allow the reusing of the socket, so the server can be restarted
+     * immediatly. */
+    optval = 1;
+    if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval,
+            sizeof(optval)) < 0) {
+        perror("Setting sockopt fails");
         exit(1);
     }
 
@@ -53,15 +75,7 @@ int main(int argc, char *argv[]) {
         new_pid = fork();
         if(new_pid == 0) {
             parent = 0;
-            child_function(sockfd, shared_counter);
-            /* Allow the reusing of the socket, so the server can be restarted
-             * immediatly. */
-            optval = 1;
-            if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval,
-                    sizeof(optval)) < 0) {
-                perror("Setting sockopt fails");
-                exit(1);
-            }
+            child_function();
         }
         else {
             parent = 1;
@@ -71,16 +85,9 @@ int main(int argc, char *argv[]) {
     }
 
     if(parent) {
-        /* Allow the reusing of the socket, so the server can be restarted
-         * immediatly. */
-        optval = 1;
-        if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval,
-                sizeof(optval)) < 0) {
-            perror("Setting sockopt fails");
-            exit(1);
-        }
+        signal(SIGINT, exit_neatly);
 
-        /* Wait for a kill command and kill the children. */
+        /* Wait for a kill command. */
         while(1) {
             if(!fgets(input, sizeof(input), stdin)) {
                 perror("Failed to read input");
@@ -90,24 +97,15 @@ int main(int argc, char *argv[]) {
                 break;
         }
 
-        for(i = 0; i < NR_CHILD; i++)
-            kill(children[i], SIGKILL);
-
-        /* Wait for the child processes to stop. */
-        for(i = 0; i < NR_CHILD; i++)
-            waitpid(children[i], NULL, 0);
-
-        /* Delete the shared counter. */
-        shmdt(shared_counter);
-        shmctl(counter, IPC_RMID, NULL);
+        exit_neatly();
     }
 
     return 0;
 }
 
 /* The function performed by the child process. */
-void child_function(int sockfd, int *shared_counter) {
-    int newsockfd, res;
+void child_function() {
+    int newsockfd, res, temp;
     socklen_t addrlen;
     struct sockaddr_in addrc;
 
@@ -116,17 +114,22 @@ void child_function(int sockfd, int *shared_counter) {
     /* Repeatedly listen for a new connection and handle it. */
     while(1) {
         /* Accept the new connection. */
+        semop(semaccept, &down, 1);
         newsockfd = accept(sockfd, (struct sockaddr *) &addrc, &addrlen);
+        semop(semaccept, &up, 1);
         if(newsockfd < 0) {
             perror("Failed to accept connection");
             exit(1);
         }
 
-        if(writen(newsockfd, shared_counter, sizeof(int)) < 0) {
+        semop(sem, &down, 1);
+        temp = htonl((*shared_counter)++);
+        semop(sem, &up, 1);
+
+        if(writen(newsockfd, &temp, sizeof(int)) < 0) {
             perror("Failed to write to socket");
             exit(1);
         }
-        *shared_counter = *shared_counter + 1;
 
         close(newsockfd);
     }
@@ -159,5 +162,37 @@ ssize_t writen(int fd, const void *vptr, size_t n) {
         ptr += nwritten;
     }
     return n;
+}
+
+/*
+ * Exit neatly by first signalling the children to stop, then wait untill the
+ * children have indeed stopped. After that, close the listening socket and
+ * delete the shared memory.
+ */
+void exit_neatly() {
+    int i;
+
+    printf("byebye\n");
+
+    /* Kill all the children. */
+    for(i = 0; i < NR_CHILD; i++)
+        kill(children[i], SIGTERM);
+
+    /* Wait for the child processes to stop. */
+    for(i = 0; i < NR_CHILD; i++)
+        waitpid(children[i], NULL, 0);
+
+    /* Close the socket. */
+    close(sockfd);    
+
+    /* Delete the shared counter. */
+    shmdt(shared_counter);
+    shmctl(counter, IPC_RMID, NULL);
+
+    /* Delete the semaphores. */
+    semctl(sem, 0, IPC_RMID);
+    semctl(semaccept, 0, IPC_RMID);
+
+    exit(0);
 }
 
