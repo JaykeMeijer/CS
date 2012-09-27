@@ -66,7 +66,8 @@ int main(int argc, char *argv[]) {
             temp = htonl(counter);
             writen(newsockfd, &temp, sizeof(counter));
 
-            /* Close this socket and go again. */
+            /* Close the sockets and go again. */
+            close(sockfd);
             close(newsockfd);
             exit(0);
         }
