@@ -1,0 +1,5 @@
+#!/bin/sh
+
+
+java -server -Xms200M -Xmx200M -cp build/jar/data_structures.jar data_structures.Main $*
+
