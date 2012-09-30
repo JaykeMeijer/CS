@@ -77,6 +77,10 @@ int main(int argc, char *argv[]) {
             parent = 0;
             child_function();
         }
+        else if(new_pid < 0) {
+            perror("Fork failed");
+            exit(1);
+        }
         else {
             parent = 1;
             children[i] = new_pid;

@@ -11,6 +11,7 @@
 int writen(int, const void*, size_t);
 
 int main(int argc, char *argv[]) {
+    pid_t pid;
     int sockfd, newsockfd, res, optval, counter = 0, temp;
     struct sockaddr_in addr, addrc;
     socklen_t addrlen;
@@ -61,7 +62,8 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
 
-        if(fork() == 0) {
+        pid = fork();
+        if(pid == 0) {
             /* Write the counter to the connected client. */
             temp = htonl(counter);
             writen(newsockfd, &temp, sizeof(counter));
@@ -70,6 +72,10 @@ int main(int argc, char *argv[]) {
             close(sockfd);
             close(newsockfd);
             exit(0);
+        }
+        else if(pid < 0) {
+            perror("Fork failed");
+            exit(1);
         }
         else {
             /* Increment the counter, close the socket from this process and
