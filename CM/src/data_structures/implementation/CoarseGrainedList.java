@@ -32,8 +32,7 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
             node.next = curr;
             pred.next = node;
             size++;
-        }
-        finally {
+        } finally {
             lock.unlock();
         }
     }
@@ -52,12 +51,10 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
             if(key == curr.key) {
                 pred.next = curr.next;
                 size--;
-            }
-            else {
+            } else {
                 System.out.println("Element not found, skipping");
             }
-        }
-        finally {
+        } finally {
             lock.unlock();
         }
     }

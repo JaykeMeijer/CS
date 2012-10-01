@@ -60,16 +60,13 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
                 if(curr.key == key) {
                     pred.next = curr.next;
                     size--;
-                }
-                else {
+                } else {
                     System.out.println("Element not found, skipping");
                 }
-            }
-            finally {
+            } finally {
                 curr.unlock();
             }
-        }
-        finally {
+        } finally {
             pred.unlock();
         }
     }

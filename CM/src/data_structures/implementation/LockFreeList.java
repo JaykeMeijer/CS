@@ -23,7 +23,6 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
             node.next = new AtomicMarkableReference<Node>(curr, false);
             if(pred.next.compareAndSet(curr, node, false, false)) {
                 size++;
-                return;
             }
         }
     }
@@ -36,16 +35,13 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
             Node pred = window.pred, curr = window.curr;
             if(curr.key != key) {
                 System.out.println("Element not found, skipping");
-                return;
-            }
-            else {
+            } else {
                 Node succ = curr.next.getReference();
                 snip = curr.next.compareAndSet(succ, succ, false, true);
                 if(!snip)
                     continue;
                 pred.next.compareAndSet(curr, succ, false, false);
                 size--;
-                return;
             }
         }
     }
