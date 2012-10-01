@@ -5,21 +5,21 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
-    private FGLNode head;
+    private Node head;
     private int size;
 
     public FineGrainedList() {
-        head = new FGLNode<T>(Integer.MIN_VALUE);
-        head.next = new FGLNode<T>(Integer.MAX_VALUE);
+        head = new Node(Integer.MIN_VALUE);
+        head.next = new Node(Integer.MAX_VALUE);
         size = 0;
     }
 
     public void add(T t) {
         int key = t.hashCode();
         head.lock();
-        FGLNode pred = head;
+        Node pred = head;
         try {
-            FGLNode curr = pred.next;
+            Node curr = pred.next;
             curr.lock();
             try  {
                 while(curr.key < key) {
@@ -28,7 +28,7 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
                     curr = curr.next;
                     curr.lock();
                 }
-                FGLNode newNode = new FGLNode<T>(t);
+                Node newNode = new Node(t);
                 newNode.next = curr;
                 pred.next = newNode;
                 size++;
@@ -43,12 +43,12 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
     }
 
     public void remove(T t) {
-        FGLNode pred = null;
+        Node pred = null;
         int key = t.hashCode();
         head.lock();
         try {
             pred = head;
-            FGLNode curr = pred.next;
+            Node curr = pred.next;
             curr.lock();
             try {
                 while(curr.key < key) {
@@ -78,30 +78,30 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
         return "FGL - size: " + size + " - value of head: " + head.key +
                 " - value of head's pred: " + head.next.key;
     }
-}
 
-class FGLNode<T extends Comparable<T>> {
-    int key;
-    T value;
-    FGLNode next;
-    private Lock lock;
+    class Node {
+        int key;
+        T value;
+        Node next;
+        private Lock lock;
 
-    public FGLNode(T t) {
-        key = t.hashCode();
-        value = t;
-        lock = new ReentrantLock();
-    }
+        public Node(T t) {
+            key = t.hashCode();
+            value = t;
+            lock = new ReentrantLock();
+        }
 
-    public FGLNode(int newKey) {
-        key = newKey;
-        lock = new ReentrantLock();
-    }
+        public Node(int newKey) {
+            key = newKey;
+            lock = new ReentrantLock();
+        }
 
-    public void lock() {
-        lock.lock();
-    }
+        public void lock() {
+            lock.lock();
+        }
 
-    public void unlock() {
-        lock.unlock();
+        public void unlock() {
+            lock.unlock();
+        }
     }
 }

@@ -5,18 +5,18 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
-    private CGLNode head;
+    private Node head;
     private Lock lock = new ReentrantLock();
     private int size;
 
     public CoarseGrainedList() {
-        head = new CGLNode<T>(Integer.MIN_VALUE);
-        head.next = new CGLNode<T>(Integer.MAX_VALUE);
+        head = new Node(Integer.MIN_VALUE);
+        head.next = new Node(Integer.MAX_VALUE);
         size = 0;
     }
 
     public void add(T t) {
-        CGLNode pred, curr;
+        Node pred, curr;
         int key = t.hashCode();
 
         lock.lock();
@@ -28,7 +28,7 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
                 curr = curr.next;
             }
 
-            CGLNode node = new CGLNode<T>(t);
+            Node node = new Node(t);
             node.next = curr;
             pred.next = node;
             size++;
@@ -39,7 +39,7 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
     }
 
     public void remove(T t) {
-        CGLNode pred, curr;
+        Node pred, curr;
         int key = t.hashCode();
         lock.lock();
         try {
@@ -66,19 +66,19 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
         return "CGL - size: " + size + " - value of head: " + head.key +
                 " - value of head's pred: " + head.next.key;
     }
-}
 
-class CGLNode<T extends Comparable<T>> {
-    int key;
-    T value;
-    CGLNode next;
+    class Node {
+        int key;
+        T value;
+        Node next;
 
-    public CGLNode(T t) {
-        key = t.hashCode();
-        value = t;
-    }
+        public Node(T t) {
+            key = t.hashCode();
+            value = t;
+        }
 
-    public CGLNode(int newKey) {
-        key = newKey;
+        public Node(int newKey) {
+            key = newKey;
+        }
     }
 }
