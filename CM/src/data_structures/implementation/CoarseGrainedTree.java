@@ -21,50 +21,40 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         lock.lock();
         try {
             if(head == null) {
-                /* No head is available yet. */
+                // No head is available yet.
                 head = new Node(t);
                 size++;
                 return;
-            }
-            else {
-                /* Traverse the tree until a free leaf is found. */
+            } else { // Traverse the tree until a free leaf is found.
                 curr = head;
                 while(true) {
                     if(curr.key >= key) {
-                        /*
-                         * Smaller than or equal to the current node. New item
-                         * has to go on the left.
-                         */
+                         // Smaller than or equal to the current node. New item
+                         // has to go on the left.
                         if(curr.left == null) {
-                            /* No leaf node yet, item is new leaf. */
+                            // No leaf node yet, item is new leaf.
                             curr.left = new Node(t);
                             size++;
                             return;
-                        }
-                        else {
-                            /* There is a leaf node. Continue traversal. */
+                        } else { // There is a leaf node. Continue traversal.
                             curr = curr.left;
                             continue;
                         }
-                    }
-                    else {
-                    /* Larger than the current node. Item goes on the right. */
+                    } else {
+                        // Larger than the current node. Item goes on the right.
                         if(curr.right == null) {
-                            /* No leaf node yet, item is new leaf. */
+                            // No leaf node yet, item is new leaf.
                             curr.right = new Node(t);
                             size++;
                             return;
-                        }
-                        else {
-                            /* There is a leaf node. Continue traversal. */
+                        } else { // There is a leaf node. Continue traversal.
                             curr = curr.right;
                             continue;
                         }
                     }
                 }
             }
-        }
-        finally {
+        } finally {
             lock.unlock();
         }
     }
@@ -82,62 +72,41 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                 if(curr == null) {
                     /* Element not in tree. */
                     System.out.println("Element not found, skipping.");
-                    return;
-                }
-                else if(curr.key == key) {
-                    /* Element found, now remove. */
+                } else if(curr.key == key) { // Element found, now remove.
                     if(curr.left == null && curr.right == null) {
-                        /* Childless node, remove link from parent */
+                        // Childless node, remove link from parent.
                         removeChildlessNode(curr, parent);
-                        return;
-                    }
-                    else if(curr.left != null && curr.right == null) {
-                        /* Node has a left child. */
+                    } else if(curr.left != null && curr.right == null) {
+                        // Node has a left child.
                         removeNodeWithLeftChild(curr, parent);
-                        return;
-                    }
-                    else if(curr.left == null && curr.right != null) {
-                        /* Node has a right child. */
+                    } else if(curr.left == null && curr.right != null) {
+                        // Node has a right child.
                         removeNodeWithRightChild(curr, parent);
-                        return;
-                    }
-                    else {
-                        /* Node has two children. */
+                    } else { // Node has two children.
                         T newValue = findAndRemoveMinimalValue(curr.right,curr);
                         Node newCurr = new Node(newValue);
                         newCurr.left = curr.left;
                         newCurr.right = curr.right;
                         if(parent == null) {
-                            /*
-                             * Node is head. New head is lowest node larger than
-                             * current head.
-                             */
+                             // Node is head. New head is lowest node larger
+                             // than current head.
                             head = newCurr;
-                        }
-                        else {
-                            /*
-                             * The removed node was not the head. Attach the
-                             * new subtree to the parent.
-                             */
+                        } else {
+                            // The removed node was not the head. Attach the
+                            // new subtree to the parent.
                             if(parent.key <= curr.key)
                                 parent.right = newCurr;
                             else
                                 parent.left = newCurr;
                         }
-                        return;
                     }
-                }
-                else {
-                    /* Element not yet found, continue traversal. */
+                    return;
+                } else { // Element not yet found, continue traversal.
                     parent = curr;
-                    if(curr.key > key)
-                        curr = curr.left;
-                    else
-                        curr = curr.right;
+                    curr = (curr.key > key ? curr.left : curr.right);
                 }
             }
-        }
-        finally{
+        } finally {
             lock.unlock();
         }
     }
@@ -161,24 +130,18 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
 
         parent = subtreeParent;
         curr = tree;
-        while(true) {
-            /* Find the node with the smallest value in the (sub)tree. */
+        while(true) { //Find the node with the smallest value in the (sub)tree.
             if(curr.left != null) {
                 parent = curr;
                 curr = curr.left;
-            }
-            else {
+            } else {
                 t = curr.value;
-                if(curr.right != null) {
-                    /* Node still has a right child. */
+                if(curr.right != null) { // Node still has a right child.
                     removeNodeWithRightChild(curr, parent);
-                    return t;
-                }
-                else {
-                    /* Node is childless. */
+                } else { // Node is childless.
                     removeChildlessNode(curr, parent);
-                    return t;
                 }
+                return t;
             }
         }
     }
@@ -192,25 +155,18 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
      */
     private void removeChildlessNode(Node curr, Node parent) {
         if(parent == null) {
-            /* Current node is head. */
+            // Current node is head.
             head = null;
-            size--;
-            return;
-        }
-        else {
+        } else {
             if(curr.key <= parent.key) {
-                /* Left child of parent. */
+                // Left child of parent.
                 parent.left = null;
-                size--;
-                return;
-            }
-            else {
-                /* Right child of parent. */
+            } else {
+                // Right child of parent.
                 parent.right = null;
-                size--;
-                return;
             }
         }
+        size--;
     }
 
     /*
@@ -221,30 +177,18 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
      * @param   Node    parent  The parent of the node that was just removed.
      */
     private void removeNodeWithLeftChild(Node curr, Node parent) {
-        if(parent == null) {
-            /* Node is head. Child is new head. */
+        if(parent == null) { // Node is head. Child is new head.
             head = curr.left;
-            size--;
-            return;
-        }
-        else {
-            /*
-             * Node is not head. Left child now replaces
-             * current node as child of parent.
-             */
-            if(curr.key <= parent.key) {
-                /* Left child of parent. */
+        } else {
+            // Node is not head. Left child now replaces
+            // current node as child of parent.
+            if(curr.key <= parent.key) { // Left child of parent.
                 parent.left = curr.left;
-                size--;
-                return;
-            }
-            else {
-                /* Right child of parent. */
+            } else { // Right child of parent.
                 parent.right = curr.left;
-                size--;
-                return;
             }
         }
+        size--;
     }
 
     /*
@@ -255,30 +199,18 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
      * @param   Node    parent  The parent of the node that was just removed.
      */
     private void removeNodeWithRightChild(Node curr, Node parent) {
-        if(parent == null) {
-            /* Node is head. Child is new head. */
+        if(parent == null) { // Node is head. Child is new head.
             head = curr.right;
-            size--;
-            return;
-        }
-        else {
-            /*
-             * Node is not head. Right child now replaces
-             * current node as child of parent.
-             */
-            if(curr.key <= parent.key) {
-                /* Left child of parent. */
+        } else {
+             // Node is not head. Right child now replaces
+             // current node as child of parent.
+            if(curr.key <= parent.key) { // Left child of parent.
                 parent.left = curr.right;
-                size--;
-                return;
-            }
-            else {
-                /* Right child of parent. */
+            } else { // Right child of parent.
                 parent.right = curr.right;
-                size--;
-                return;
             }
         }
+        size--;
     }
 
     class Node {
