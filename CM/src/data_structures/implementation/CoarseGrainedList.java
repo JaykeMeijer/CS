@@ -10,25 +10,24 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
     private int size;
 
     public CoarseGrainedList() {
-        head = new Node(Integer.MIN_VALUE);
-        head.next = new Node(Integer.MAX_VALUE);
+        head = new FirstNode();
+        head.next = new LastNode();
         size = 0;
     }
 
     public void add(T t) {
         Node pred, curr;
-        int key = t.hashCode();
 
         lock.lock();
         try {
             pred = head;
             curr = pred.next;
-            while(curr.key < key) {
+            while(curr.compareTo(t) < 0) {
                 pred = curr;
                 curr = curr.next;
             }
 
-            Node node = new Node(t);
+            Node node = new ListNode(t);
             node.next = curr;
             pred.next = node;
             size++;
@@ -39,16 +38,16 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
 
     public void remove(T t) {
         Node pred, curr;
-        int key = t.hashCode();
+
         lock.lock();
         try {
             pred = head;
             curr = pred.next;
-            while(curr.key < key) {
+            while(curr.compareTo(t) < 0) {
                 pred = curr;
                 curr = curr.next;
             }
-            if(key == curr.key) {
+            if(curr.compareTo(t) == 0) {
                 pred.next = curr.next;
                 size--;
             } else {
@@ -60,22 +59,49 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
     }
 
     public String toString() {
-        return "CGL - size: " + size + " - value of head: " + head.key +
-                " - value of head's pred: " + head.next.key;
+        return "CGL - size: " + size + " - head: " + head +
+                " - head's pred: " + head.next;
     }
 
-    class Node {
-        int key;
+    abstract class Node {
         T value;
         Node next;
 
-        public Node(T t) {
-            key = t.hashCode();
+        abstract int compareTo(T t);
+        abstract public String toString();
+    }
+
+    class ListNode extends Node {
+        public ListNode(T t) {
             value = t;
         }
 
-        public Node(int newKey) {
-            key = newKey;
+        int compareTo(T t) {
+            return value.compareTo(t);
+        }
+
+        public String toString() {
+            return "List node";
+        }
+    }
+
+    class FirstNode extends Node {
+        int compareTo(T t) {
+            return -1;
+        }
+
+        public String toString() {
+            return "First node in the list";
+        }
+    }
+
+    class LastNode extends Node {
+        int compareTo(T t) {
+            return 1;
+        }
+
+        public String toString() {
+            return "Last node in the list";
         }
     }
 }
