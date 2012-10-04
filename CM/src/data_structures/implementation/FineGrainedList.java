@@ -6,32 +6,28 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
     private Node head;
-    private int size;
 
     public FineGrainedList() {
-        head = new Node(Integer.MIN_VALUE);
-        head.next = new Node(Integer.MAX_VALUE);
-        size = 0;
+        head = new FirstNode();
+        head.next = new LastNode();
     }
 
     public void add(T t) {
-        int key = t.hashCode();
         head.lock();
         Node pred = head;
         try {
             Node curr = pred.next;
             curr.lock();
             try  {
-                while(curr.key < key) {
+                while(curr.compareTo(t) < 0) {
                     pred.unlock();
                     pred = curr;
                     curr = curr.next;
                     curr.lock();
                 }
-                Node newNode = new Node(t);
+                Node newNode = new ListNode(t);
                 newNode.next = curr;
                 pred.next = newNode;
-                size++;
             }
             finally {
                 curr.unlock();
@@ -44,22 +40,20 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
 
     public void remove(T t) {
         Node pred = null;
-        int key = t.hashCode();
         head.lock();
         try {
             pred = head;
             Node curr = pred.next;
             curr.lock();
             try {
-                while(curr.key < key) {
+                while(curr.compareTo(t) < 0) {
                     pred.unlock();
                     pred = curr;
                     curr = curr.next;
                     curr.lock();
                 }
-                if(curr.key == key) {
+                if(curr.compareTo(t) == 0) {
                     pred.next = curr.next;
-                    size--;
                 } else {
                     System.out.println("Element not found, skipping");
                 }
@@ -72,26 +66,16 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
     }
 
     public String toString() {
-        return "FGL - size: " + size + " - value of head: " + head.key +
-                " - value of head's pred: " + head.next.key;
+        return "FGL - head: " + head + " - head's next: " + head.next;
     }
 
-    class Node {
-        int key;
+    abstract class Node {
         T value;
         Node next;
-        private Lock lock;
+        private Lock lock = new ReentrantLock();
 
-        public Node(T t) {
-            key = t.hashCode();
-            value = t;
-            lock = new ReentrantLock();
-        }
-
-        public Node(int newKey) {
-            key = newKey;
-            lock = new ReentrantLock();
-        }
+        abstract int compareTo(T t);
+        abstract public String toString();
 
         public void lock() {
             lock.lock();
@@ -99,6 +83,40 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
 
         public void unlock() {
             lock.unlock();
+        }
+    }
+
+    class ListNode extends Node {
+        public ListNode(T t) {
+            value = t;
+        }
+
+        int compareTo(T t) {
+            return value.compareTo(t);
+        }
+
+        public String toString() {
+            return "List node";
+        }
+    }
+
+    class FirstNode extends Node {
+        int compareTo(T t) {
+            return -1;
+        }
+
+        public String toString() {
+            return "First node in the list";
+        }
+    }
+
+    class LastNode extends Node {
+        int compareTo(T t) {
+            return 1;
+        }
+
+        public String toString() {
+            return "Last node in the list";
         }
     }
 }

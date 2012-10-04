@@ -7,12 +7,10 @@ import java.util.concurrent.locks.ReentrantLock;
 public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
     private Node head;
     private Lock lock = new ReentrantLock();
-    private int size;
 
     public CoarseGrainedList() {
         head = new FirstNode();
         head.next = new LastNode();
-        size = 0;
     }
 
     public void add(T t) {
@@ -30,7 +28,6 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
             Node node = new ListNode(t);
             node.next = curr;
             pred.next = node;
-            size++;
         } finally {
             lock.unlock();
         }
@@ -49,7 +46,6 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
             }
             if(curr.compareTo(t) == 0) {
                 pred.next = curr.next;
-                size--;
             } else {
                 System.out.println("Element not found, skipping");
             }
@@ -59,8 +55,7 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
     }
 
     public String toString() {
-        return "CGL - size: " + size + " - head: " + head +
-                " - head's pred: " + head.next;
+        return "CGL - head: " + head + " - head's next: " + head.next;
     }
 
     abstract class Node {
