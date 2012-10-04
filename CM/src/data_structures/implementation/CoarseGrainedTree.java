@@ -5,17 +5,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
-    private Node head;
+    private Node head = null;
     private Lock lock = new ReentrantLock();
-    private int size;
-
-    public CoarseGrainedTree() {
-        head = null;
-        size = 0;
-    }
 
     public void add(T t) {
-        int key = t.hashCode();
         Node curr;
 
         lock.lock();
@@ -23,18 +16,15 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
             if(head == null) {
                 // No head is available yet.
                 head = new Node(t);
-                size++;
-                return;
             } else { // Traverse the tree until a free leaf is found.
                 curr = head;
                 while(true) {
-                    if(curr.key >= key) {
+                    if(curr.compareTo(t) >= 0) {
                          // Smaller than or equal to the current node. New item
                          // has to go on the left.
                         if(curr.left == null) {
                             // No leaf node yet, item is new leaf.
                             curr.left = new Node(t);
-                            size++;
                             return;
                         } else { // There is a leaf node. Continue traversal.
                             curr = curr.left;
@@ -45,7 +35,6 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                         if(curr.right == null) {
                             // No leaf node yet, item is new leaf.
                             curr.right = new Node(t);
-                            size++;
                             return;
                         } else { // There is a leaf node. Continue traversal.
                             curr = curr.right;
@@ -60,7 +49,6 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
     public void remove(T t) {
-        int key = t.hashCode();
         Node curr, parent;
 
         lock.lock();
@@ -72,7 +60,7 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                 if(curr == null) {
                     /* Element not in tree. */
                     System.out.println("Element not found, skipping.");
-                } else if(curr.key == key) { // Element found, now remove.
+                } else if(curr.compareTo(t) == 0) { // Element found, now remove.
                     if(curr.left == null && curr.right == null) {
                         // Childless node, remove link from parent.
                         removeChildlessNode(curr, parent);
@@ -94,7 +82,7 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                         } else {
                             // The removed node was not the head. Attach the
                             // new subtree to the parent.
-                            if(parent.key <= curr.key)
+                            if(parent.compareTo(curr.value) <= 0)
                                 parent.right = newCurr;
                             else
                                 parent.left = newCurr;
@@ -103,7 +91,7 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                     return;
                 } else { // Element not yet found, continue traversal.
                     parent = curr;
-                    curr = (curr.key > key ? curr.left : curr.right);
+                    curr = (curr.compareTo(t) > 0 ? curr.left : curr.right);
                 }
             }
         } finally {
@@ -112,7 +100,7 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
     public String toString() {
-        return "CGT - size: " + size + " - Head: " + head;
+        return "CGT - Head: " + head;
     }
 
     /*
@@ -158,7 +146,7 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
             // Current node is head.
             head = null;
         } else {
-            if(curr.key <= parent.key) {
+            if(curr.compareTo(parent.value) <= 0) {
                 // Left child of parent.
                 parent.left = null;
             } else {
@@ -166,7 +154,6 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                 parent.right = null;
             }
         }
-        size--;
     }
 
     /*
@@ -182,13 +169,12 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         } else {
             // Node is not head. Left child now replaces
             // current node as child of parent.
-            if(curr.key <= parent.key) { // Left child of parent.
+            if(curr.compareTo(parent.value) <= 0) { // Left child of parent.
                 parent.left = curr.left;
             } else { // Right child of parent.
                 parent.right = curr.left;
             }
         }
-        size--;
     }
 
     /*
@@ -204,27 +190,24 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         } else {
              // Node is not head. Right child now replaces
              // current node as child of parent.
-            if(curr.key <= parent.key) { // Left child of parent.
+            if(curr.compareTo(parent.value) <= 0) { // Left child of parent.
                 parent.left = curr.right;
             } else { // Right child of parent.
                 parent.right = curr.right;
             }
         }
-        size--;
     }
 
     class Node {
-        int key;
         T value = null;
         Node left = null, right = null;
 
         public Node(T t) {
-            key = t.hashCode();
             value = t;
         }
 
-        public Node(int newKey) {
-            key = newKey;
+        public int compareTo(T t) {
+            return value.compareTo(t);
         }
     }
 }
