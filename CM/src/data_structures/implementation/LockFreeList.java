@@ -5,35 +5,30 @@ import java.util.concurrent.atomic.AtomicMarkableReference;
 
 public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
     private Node head;
-    private int size;
 
     public LockFreeList() {
-        head = new Node(Integer.MIN_VALUE);
-        Node tail = new Node(Integer.MAX_VALUE);
+        head = new FirstNode();
+        Node tail = new LastNode();
         while(!head.next.compareAndSet(null, tail, false, false));
-        size = 0;
     }
 
     public void add(T t) {
-        int key = t.hashCode();
         while(true) {
-            Window window = find(head, key);
+            Window window = find(t);
             Node pred = window.pred, curr = window.curr;
-            Node node = new Node(t);
+            Node node = new ListNode(t);
             node.next = new AtomicMarkableReference<Node>(curr, false);
-            if(pred.next.compareAndSet(curr, node, false, false)) {
-                size++;
-            }
+            if(pred.next.compareAndSet(curr, node, false, false))
+                return;
         }
     }
 
     public void remove(T t) {
-        int key = t.hashCode();
         boolean snip;
         while(true) {
-            Window window = find(head, key);
+            Window window = find(t);
             Node pred = window.pred, curr = window.curr;
-            if(curr.key != key) {
+            if(curr.compareTo(t) != 0) {
                 System.out.println("Element not found, skipping");
             } else {
                 Node succ = curr.next.getReference();
@@ -41,18 +36,18 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
                 if(!snip)
                     continue;
                 pred.next.compareAndSet(curr, succ, false, false);
-                size--;
             }
+            return;
         }
     }
 
     public String toString() {
-        return "LFL - size: " + size + " - value of head: " + head.key +
-                " - value of head's pred: " + head.next.getReference().key;
+        return "LFL - head: " + head + " - head's next: "
+                + head.next.getReference();
     }
 
     /* Find the two nodes affected in the required operation. */
-    private Window find(Node head, int key) {
+    private Window find(T t) {
         Node pred = null, curr = null, succ = null;
         boolean[] marked = {false};
         boolean snip;
@@ -68,7 +63,7 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
                     curr = succ;
                     succ = curr.next.get(marked);
                 }
-                if(curr.key >= key)
+                if(curr.compareTo(t) >= 0)
                     return new Window(pred, curr);
                 pred = curr;
                 curr = succ;
@@ -85,21 +80,46 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
         }
     }
 
-    class Node {
-        int key;
+    abstract class Node {
         T value;
-        AtomicMarkableReference<Node> next;
+        AtomicMarkableReference<Node> next = 
+                new AtomicMarkableReference<Node>(null, false);
 
-        Node(T t) {
-            key = t.hashCode();
+        abstract int compareTo(T t);
+        abstract public String toString();
+    }
+
+    class ListNode extends Node {
+        public ListNode(T t) {
             value = t;
-            next = new AtomicMarkableReference<Node>(null, false);
         }
 
-        Node(int newKey) {
-            key = newKey;
-            value = null;
-            next = new AtomicMarkableReference<Node>(null, false);
+        int compareTo(T t) {
+            return value.compareTo(t);
+        }
+
+        public String toString() {
+            return "List node";
+        }
+    }
+
+    class FirstNode extends Node {
+        int compareTo(T t) {
+            return -1;
+        }
+
+        public String toString() {
+            return "First node in the list";
+        }
+    }
+
+    class LastNode extends Node {
+        int compareTo(T t) {
+            return 1;
+        }
+
+        public String toString() {
+            return "Last node in the list";
         }
     }
 }
