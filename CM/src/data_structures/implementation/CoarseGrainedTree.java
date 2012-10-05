@@ -26,9 +26,8 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                             // No leaf node yet, item is new leaf.
                             curr.left = new Node(t);
                             return;
-                        } else { // There is a leaf node. Continue traversal.
+                        } else { // There is a subtree. Continue traversal.
                             curr = curr.left;
-                            continue;
                         }
                     } else {
                         // Larger than the current node. Item goes on the right.
@@ -36,9 +35,8 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                             // No leaf node yet, item is new leaf.
                             curr.right = new Node(t);
                             return;
-                        } else { // There is a leaf node. Continue traversal.
+                        } else { // There is a subtree. Continue traversal.
                             curr = curr.right;
-                            continue;
                         }
                     }
                 }
@@ -49,17 +47,17 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
     public void remove(T t) {
-        Node curr, parent;
+        Node curr, parent = null;
 
         lock.lock();
         try {
             /* Traverse the tree to find the node to remove. */
-            parent = null;
             curr = head;
             while(true) {
                 if(curr == null) {
                     /* Element not in tree. */
                     System.out.println("Element not found, skipping.");
+                    return;
                 } else if(curr.compareTo(t) == 0) { // Element found, now remove.
                     if(curr.left == null && curr.right == null) {
                         // Childless node, remove link from parent.
@@ -77,7 +75,7 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                     return;
                 } else { // Element not yet found, continue traversal.
                     parent = curr;
-                    curr = (curr.compareTo(t) > 0 ? curr.left : curr.right);
+                    curr = (curr.compareTo(t) >= 0 ? curr.left : curr.right);
                 }
             }
         } finally {
@@ -86,7 +84,7 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
     public String toString() {
-        return "CGT - Head: " + head;
+        return head == null ? "(null)" : head.stringify(Node.TABSIZE);
     }
 
     /*
@@ -99,21 +97,18 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
      * @return  T               The item from the node that was just removed.
      */
     private T findAndRemoveMinimalValue(Node tree, Node subtreeParent) {
-        T t;
-        Node parent = subtreeParent;
-        Node curr = tree;
+        Node parent = subtreeParent, curr = tree;
         while(true) { //Find the node with the smallest value in the (sub)tree.
             if(curr.left != null) {
                 parent = curr;
                 curr = curr.left;
             } else {
-                t = curr.value;
                 if(curr.right != null) { // Node still has a right child.
                     replaceNodeWith(curr, parent, curr.right);
                 } else { // Node is childless.
                     replaceNodeWith(curr, parent, null);
                 }
-                return t;
+                return curr.value;
             }
         }
     }
@@ -139,7 +134,8 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         }
     }
 
-    class Node {
+    class Node implements Comparable<T> {
+        final static int TABSIZE = 4;
         T value = null;
         Node left = null, right = null;
 
@@ -149,6 +145,25 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
 
         public int compareTo(T t) {
             return value.compareTo(t);
+        }
+
+        public boolean isLeaf() {
+            return left == null && right == null;
+        }
+
+        public String stringify(int indent_length) {
+            if(this.isLeaf())
+                return value.toString();
+
+            String indent = new String();
+
+            for(int i = 0; i < indent_length; i++)
+                indent += ' ';
+
+            return String.format("%s\n%s< %s\n%s> %s", value, indent,
+                left == null ? "(null)" : left.stringify(indent_length + TABSIZE),
+                indent,
+                right == null ? "(null)" : right.stringify(indent_length + TABSIZE));
         }
     }
 }
