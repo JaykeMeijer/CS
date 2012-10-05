@@ -103,11 +103,10 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                 parent = curr;
                 curr = curr.left;
             } else {
-                if(curr.right != null) { // Node still has a right child.
+                if(curr.right != null) // Node still has a right child.
                     replaceNodeWith(curr, parent, curr.right);
-                } else { // Node is childless.
+                else // Node is childless.
                     replaceNodeWith(curr, parent, null);
-                }
                 return curr.value;
             }
         }
@@ -126,9 +125,11 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         } else {
             // Node is not head. Replacement now replaces
             // current node as child of parent.
-            if(curr.compareTo(parent.value) <= 0) { // Left child of parent.
+            if(curr.compareTo(parent.value) <= 0) {
+                // Left child of parent.
                 parent.left = replacement;
-            } else { // Right child of parent.
+            } else {
+                // Right child of parent.
                 parent.right = replacement;
             }
         }
