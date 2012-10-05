@@ -13,8 +13,8 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
     }
 
     public void add(T t) {
-        head.lock();
         Node pred = head;
+        head.lock();
         try {
             Node curr = pred.next;
             curr.lock();
@@ -39,10 +39,9 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
     }
 
     public void remove(T t) {
-        Node pred = null;
+        Node pred = head;
         head.lock();
         try {
-            pred = head;
             Node curr = pred.next;
             curr.lock();
             try {
