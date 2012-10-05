@@ -63,30 +63,16 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                 } else if(curr.compareTo(t) == 0) { // Element found, now remove.
                     if(curr.left == null && curr.right == null) {
                         // Childless node, remove link from parent.
-                        removeChildlessNode(curr, parent);
+                        replaceNodeWith(curr, parent, null);
                     } else if(curr.left != null && curr.right == null) {
-                        // Node has a left child.
-                        removeNodeWithLeftChild(curr, parent);
+                        // Node only has a left child.
+                        replaceNodeWith(curr, parent, curr.left);
                     } else if(curr.left == null && curr.right != null) {
-                        // Node has a right child.
-                        removeNodeWithRightChild(curr, parent);
+                        // Node only has a right child.
+                        replaceNodeWith(curr, parent, curr.right);
                     } else { // Node has two children.
                         T newValue = findAndRemoveMinimalValue(curr.right,curr);
-                        Node newCurr = new Node(newValue);
-                        newCurr.left = curr.left;
-                        newCurr.right = curr.right;
-                        if(parent == null) {
-                             // Node is head. New head is lowest node larger
-                             // than current head.
-                            head = newCurr;
-                        } else {
-                            // The removed node was not the head. Attach the
-                            // new subtree to the parent.
-                            if(parent.compareTo(curr.value) <= 0)
-                                parent.right = newCurr;
-                            else
-                                parent.left = newCurr;
-                        }
+                        curr.value = newValue;
                     }
                     return;
                 } else { // Element not yet found, continue traversal.
@@ -125,9 +111,9 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
             } else {
                 t = curr.value;
                 if(curr.right != null) { // Node still has a right child.
-                    removeNodeWithRightChild(curr, parent);
+                    replaceNodeWith(curr, parent, curr.right);
                 } else { // Node is childless.
-                    removeChildlessNode(curr, parent);
+                    replaceNodeWith(curr, parent, null);
                 }
                 return t;
             }
@@ -135,65 +121,22 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
     /*
-     * Remove a node that has no children. This is done by removing its
-     * reference from the parent node.
+     * Replace the current node with some replacement.
      *
-     * @param   Node    curr    The node to remove.
-     * @param   Node    parent  The parent of the node that was just removed.
+     * @param   Node    curr        The node to replace.
+     * @param   Node    parent      The parent of the current node.
+     * @param   Node    replacement The node to use as replacement.
      */
-    private void removeChildlessNode(Node curr, Node parent) {
-        if(parent == null) {
-            // Current node is head.
-            head = null;
+    private void replaceNodeWith(Node curr, Node parent, Node replacement) {
+        if(parent == null) { // Node is head. Replacement is new head.
+            head = replacement;
         } else {
-            if(curr.compareTo(parent.value) <= 0) {
-                // Left child of parent.
-                parent.left = null;
-            } else {
-                // Right child of parent.
-                parent.right = null;
-            }
-        }
-    }
-
-    /*
-     * Remove a node that has only a left child. This is done by changing its
-     * reference in the parent node to that of its child.
-     *
-     * @param   Node    curr    The node to remove.
-     * @param   Node    parent  The parent of the node that was just removed.
-     */
-    private void removeNodeWithLeftChild(Node curr, Node parent) {
-        if(parent == null) { // Node is head. Child is new head.
-            head = curr.left;
-        } else {
-            // Node is not head. Left child now replaces
+            // Node is not head. Replacement now replaces
             // current node as child of parent.
             if(curr.compareTo(parent.value) <= 0) { // Left child of parent.
-                parent.left = curr.left;
+                parent.left = replacement;
             } else { // Right child of parent.
-                parent.right = curr.left;
-            }
-        }
-    }
-
-    /*
-     * Remove a node that has only a right child. This is done by changing its
-     * reference in the parent node to that of its child.
-     *
-     * @param   Node    curr    The node to remove.
-     * @param   Node    parent  The parent of the node that was just removed.
-     */
-    private void removeNodeWithRightChild(Node curr, Node parent) {
-        if(parent == null) { // Node is head. Child is new head.
-            head = curr.right;
-        } else {
-             // Node is not head. Right child now replaces
-             // current node as child of parent.
-            if(curr.compareTo(parent.value) <= 0) { // Left child of parent.
-                parent.left = curr.right;
-            } else { // Right child of parent.
-                parent.right = curr.right;
+                parent.right = replacement;
             }
         }
     }
