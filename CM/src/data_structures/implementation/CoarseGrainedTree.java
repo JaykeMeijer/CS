@@ -99,11 +99,9 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
      * @return  T               The item from the node that was just removed.
      */
     private T findAndRemoveMinimalValue(Node tree, Node subtreeParent) {
-        Node curr, parent;
         T t;
-
-        parent = subtreeParent;
-        curr = tree;
+        Node parent = subtreeParent;
+        Node curr = tree;
         while(true) { //Find the node with the smallest value in the (sub)tree.
             if(curr.left != null) {
                 parent = curr;
