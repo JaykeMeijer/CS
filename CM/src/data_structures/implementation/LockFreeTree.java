@@ -5,46 +5,56 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicStampedReference;
 
 public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
-
     final static int CLEAN = 1, MARK = 2, IFLAG = 3, DFLAG = 4;
-    Node root = null;
+    Internal root;
 
     class Update {
         AtomicStampedReference<Info> inforef;
 
-        public Update(Info info, int state) {
+        Update(Info info, int state) {
             inforef = new AtomicStampedReference<Info>(info, state);
         }
 
-        public boolean attemptStamp(Info expectedInfo, int newState) {
+        boolean attemptStamp(Info expectedInfo, int newState) {
             return inforef.attemptStamp(expectedInfo, newState);
         }
 
-        public int getState() {
+        int getState() {
             return inforef.getStamp();
         }
 
-        public Info getInfo() {
+        Info getInfo() {
             return inforef.getReference();
         }
 
-        public Info get(int[] stateHolder) {
+        Info get(int[] stateHolder) {
             return inforef.get(stateHolder);
         }
 
-        public boolean compareAndSet(Info er, Info nr, int es, int ns) {
+        boolean compareAndSet(Info er, Info nr, int es, int ns) {
             return inforef.compareAndSet(er, nr, es, ns);
         }
     }
 
     abstract class Node implements Comparable<Key> {
+        final static int TABSIZE = 4;
         AtomicReference<Key> key;
 
-        abstract public String toString();
         abstract boolean isLeaf();
+        abstract String toString(int indent_length);
 
         Key getKey() {
             return key.get();
+        }
+
+        public int compareTo(Key k) {
+            if(k == null)
+                return -1;
+
+            if(key.get() == null)
+                return 1;
+
+            return key.get().compareTo(k);
         }
     }
 
@@ -52,49 +62,59 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         AtomicReference<Node> left, right;
         Update update;
 
-        public Internal(Key k, Node l, Node r) {
+        Internal(Key k, Node l, Node r) {
             key = new AtomicReference<Key>(k);
             left = new AtomicReference<Node>(l);
             right = new AtomicReference<Node>(r);
             update = new Update(null, CLEAN);
         }
 
-        public int compareTo(Key k) {
-            return key.get().compareTo(k);
-        }
-
-        public String toString() {
-            return "Internal node";
-        }
-
-        public boolean isLeaf() {
+        boolean isLeaf() {
             return false;
         }
 
-        public Node getLeft() {
+        Node getLeft() {
             return left.get();
         }
 
-        public Node getRight() {
+        Node getRight() {
             return right.get();
+        }
+
+        String toString(int indent_length) {
+            if(this.isLeaf())
+                return key.toString();
+
+            String indent = new String();
+
+            for(int i = 0; i < indent_length; i++)
+                indent += ' ';
+
+            return String.format("%s\n%s< %s\n%s> %s", key, indent,
+                left.get().toString(indent_length + TABSIZE),
+                indent, right.get().toString(indent_length + TABSIZE));
         }
     }
 
     class Leaf extends Node {
-        public Leaf(Key k) {
+        Leaf(Key k) {
             key = new AtomicReference<Key>(k);
         }
 
-        public int compareTo(Key k) {
-            return key.get().compareTo(k);
-        }
-
-        public String toString() {
-            return "Leaf node";
-        }
-
-        public boolean isLeaf() {
+        boolean isLeaf() {
             return true;
+        }
+
+        String toString(int indent_length) {
+            if(this.isLeaf())
+                return key.toString();
+
+            String indent = new String();
+
+            for(int i = 0; i < indent_length; i++)
+                indent += ' ';
+
+            return String.format("%s\n", key);
         }
     }
 
@@ -105,7 +125,7 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
     class IInfo extends Info {
         Internal p, newInternal;
 
-        public IInfo(Internal p, Leaf l, Internal newInternal) {
+        IInfo(Internal p, Leaf l, Internal newInternal) {
             this.p = p;
             this.l = l;
             this.newInternal = newInternal;
@@ -116,7 +136,7 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         Internal gp, p;
         Update pupdate;
 
-        public DInfo(Internal gp, Internal p, Leaf l, Update pupdate) {
+        DInfo(Internal gp, Internal p, Leaf l, Update pupdate) {
             this.gp = gp;
             this.p = p;
             this.l = l;
@@ -129,7 +149,7 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         Leaf l;
         Update pupdate, gpupdate;
 
-        public SearchTuple(Internal gp, Internal p, Leaf l,
+        SearchTuple(Internal gp, Internal p, Leaf l,
                 Update pupdate, Update gpupdate) {
             this.gp = gp;
             this.p = p;
@@ -137,6 +157,11 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
             this.pupdate = pupdate;
             this.gpupdate = gpupdate;
         }
+    }
+
+    LockFreeTree() {
+        Leaf left = new Leaf(null), right = new Leaf(null);
+        root = new Internal(null, left, right);
     }
 
     private SearchTuple search(Key k) {
@@ -165,6 +190,8 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         int[] expState = new int[1];
         Info expInfo;
 
+        //System.out.println("Adding " + k);
+
         while(true) {
             r = search(k);
             cmp = r.l.compareTo(k);
@@ -188,6 +215,7 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
 
                 if(r.p.update.compareAndSet(expInfo, op, expState[0], IFLAG)) {
                     helpInsert(op);
+                    //System.out.println(this);
                     return;
                 }
 
@@ -207,11 +235,14 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         int[] expState = new int[1];
         Info expInfo;
 
+        //System.out.println("Deleting " + k);
+
         while(true) {
             r = search(k);
             if(r.l.compareTo(k) != 0) {
                 // FIXME: remove print statements
                 System.out.println("Key not found: " + k);
+                System.out.println(this);
                 return;
             }
 
@@ -234,21 +265,22 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
     }
 
     private boolean helpDelete(DInfo op) {
-        //if(op == null)
-        //    return true;
+        if(op == null)
+            return true;
 
         Update result;
-        int[] stateHolder = new int[1];
-        Info infoHolder = op.pupdate.get(stateHolder);
+        int[] stateHolder = new int[1], stateHolderB = new int[1];
+        Info infoHolder = op.pupdate.get(stateHolder),
+             infoHolderB = op.p.update.get(stateHolder);
 
         if(op.p.update.compareAndSet(infoHolder, op, stateHolder[0], MARK)) {
             helpMarked(op);
             return true;
         } else {
             // Check if another thread helped
-            infoHolder = op.p.update.get(stateHolder);
+            //infoHolder = op.p.update.get(stateHolder);
 
-            if(infoHolder == op && stateHolder[0] == MARK) {
+            if(infoHolderB == op && stateHolderB[0] == MARK) {
                 helpMarked(op);
                 return true;
             }
@@ -260,8 +292,8 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
     }
 
     private void helpMarked(DInfo op) {
-        //if(op == null)
-        //    return true;
+        if(op == null)
+            return;
 
         Node other = op.p.getRight() == op.l ? op.p.getLeft() : op.p.getRight();
 
@@ -283,13 +315,13 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
     }
 
     private void casChild(Internal parent, Node old, Node newNode) {
-        if(newNode.getKey().compareTo(parent.getKey()) < 0)
+        if(newNode.compareTo(parent.getKey()) < 0)
             parent.left.compareAndSet(old, newNode);
         else
             parent.right.compareAndSet(old, newNode);
     }
 
     public String toString() {
-        throw new UnsupportedOperationException();
+        return root.getLeft().toString(Node.TABSIZE);
     }
 }
