@@ -159,7 +159,7 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         }
     }
 
-    LockFreeTree() {
+    public LockFreeTree() {
         Leaf left = new Leaf(null), right = new Leaf(null);
         root = new Internal(null, left, right);
     }
