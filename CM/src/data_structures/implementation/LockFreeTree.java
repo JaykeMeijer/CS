@@ -271,15 +271,13 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         Update result;
         int[] stateHolder = new int[1], stateHolderB = new int[1];
         Info infoHolder = op.pupdate.get(stateHolder),
-             infoHolderB = op.p.update.get(stateHolder);
+             infoHolderB = op.p.update.get(stateHolderB);
 
         if(op.p.update.compareAndSet(infoHolder, op, stateHolder[0], MARK)) {
             helpMarked(op);
             return true;
         } else {
-            // Check if another thread helped
-            //infoHolder = op.p.update.get(stateHolder);
-
+            // Check if another thread helped already
             if(infoHolderB == op && stateHolderB[0] == MARK) {
                 helpMarked(op);
                 return true;
