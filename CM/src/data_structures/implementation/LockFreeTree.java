@@ -15,10 +15,6 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
             inforef = new AtomicStampedReference<Info>(info, state);
         }
 
-        boolean attemptStamp(Info expectedInfo, int newState) {
-            return inforef.attemptStamp(expectedInfo, newState);
-        }
-
         int getState() {
             return inforef.getStamp();
         }
@@ -38,23 +34,19 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
 
     abstract class Node implements Comparable<Key> {
         final static int TABSIZE = 4;
-        AtomicReference<Key> key;
+        Key key;
 
         abstract boolean isLeaf();
         abstract String toString(int indent_length);
-
-        Key getKey() {
-            return key.get();
-        }
 
         public int compareTo(Key k) {
             if(k == null)
                 return -1;
 
-            if(key.get() == null)
+            if(key == null)
                 return 1;
 
-            return key.get().compareTo(k);
+            return key.compareTo(k);
         }
     }
 
@@ -63,7 +55,7 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         Update update;
 
         Internal(Key k, Node l, Node r) {
-            key = new AtomicReference<Key>(k);
+            key = k;
             left = new AtomicReference<Node>(l);
             right = new AtomicReference<Node>(r);
             update = new Update(null, CLEAN);
@@ -82,9 +74,6 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         }
 
         String toString(int indent_length) {
-            if(this.isLeaf())
-                return key.toString();
-
             String indent = new String();
 
             for(int i = 0; i < indent_length; i++)
@@ -98,7 +87,7 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
 
     class Leaf extends Node {
         Leaf(Key k) {
-            key = new AtomicReference<Key>(k);
+            key = k;
         }
 
         boolean isLeaf() {
@@ -106,15 +95,7 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         }
 
         String toString(int indent_length) {
-            if(this.isLeaf())
-                return key.toString();
-
-            String indent = new String();
-
-            for(int i = 0; i < indent_length; i++)
-                indent += ' ';
-
-            return String.format("%s\n", key);
+            return String.valueOf(key);
         }
     }
 
@@ -206,10 +187,10 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
             if(r.pupdate.getState() != CLEAN) {
                 help(r.pupdate);
             } else {
-                newSibling = new Leaf(r.l.getKey());
+                newSibling = new Leaf(r.l.key);
                 newInternal = cmp < 0
                     ? new Internal(k, newSibling, newLeaf)
-                    : new Internal(r.l.getKey(), newLeaf, newSibling);
+                    : new Internal(r.l.key, newLeaf, newSibling);
                 op = new IInfo(r.p, r.l, newInternal);
                 expInfo = r.pupdate.get(expState);
 
@@ -239,16 +220,19 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
 
         while(true) {
             r = search(k);
+
             if(r.l.compareTo(k) != 0) {
                 // FIXME: remove print statements
                 System.out.println("Key not found: " + k);
-                System.out.println(this);
+                //System.out.println(this);
                 return;
             }
 
             if(r.gpupdate.getState() != CLEAN) {
+                System.out.println("help(r.gpupdate);");
                 help(r.gpupdate);
             } else if(r.pupdate.getState() != CLEAN) {
+                System.out.println("help(r.pupdate);");
                 help(r.pupdate);
             } else {
                 op = new DInfo(r.gp, r.p, r.l, r.pupdate);
@@ -257,34 +241,29 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
                 if(r.gp.update.compareAndSet(expInfo, op, expState[0], DFLAG)) {
                     if(helpDelete(op))
                         return;
+                } else {
+                    help(r.gp.update);
                 }
-
-                help(r.gp.update);
             }
         }
     }
 
     private boolean helpDelete(DInfo op) {
-        if(op == null)
-            return true;
-
-        Update result;
         int[] stateHolder = new int[1];
-        Info infoHolder = op.pupdate.get(stateHolder);
+        Info info = op.pupdate.get(stateHolder);
 
-        if(op.p.update.compareAndSet(infoHolder, op, stateHolder[0], MARK)) {
+        if(op.p.update.compareAndSet(info, op, stateHolder[0], MARK)) {
             helpMarked(op);
             return true;
         } else {
             // Check if another thread helped already
-            infoHolder = op.p.update.get(stateHolder);
+            info = op.p.update.get(stateHolder);
 
-            if(infoHolder == op && stateHolder[0] == MARK) {
+            if(info == op && stateHolder[0] == MARK) {
                 helpMarked(op);
                 return true;
             }
 
-            System.out.println("Mark failed");
             help(op.p.update);
             op.gp.update.compareAndSet(op, op, DFLAG, CLEAN);
             return false;
@@ -292,36 +271,37 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
     }
 
     private void helpMarked(DInfo op) {
-        if(op == null)
-            return;
-
-        Node other = op.p.getRight() == op.l ? op.p.getLeft() : op.p.getRight();
+        Node right = op.p.getRight(),
+             other = (right == op.l) ? op.p.getLeft() : right;
 
         casChild(op.gp, op.p, other);
         op.gp.update.compareAndSet(op, op, DFLAG, CLEAN);
     }
 
     private void help(Update u) {
-        switch(u.getState()) {
+        int[] stateHolder = new int[1];
+        Info info = u.get(stateHolder);
+
+        switch(stateHolder[0]) {
             case IFLAG:
-                helpInsert((IInfo)u.getInfo());
+                helpInsert((IInfo)info);
                 break;
             case MARK:
-                helpMarked((DInfo)u.getInfo());
+                helpMarked((DInfo)info);
                 break;
             case DFLAG:
-                helpDelete((DInfo)u.getInfo());
+                helpDelete((DInfo)info);
         }
     }
 
     private void casChild(Internal parent, Node old, Node newNode) {
-        if(newNode.compareTo(parent.getKey()) < 0)
+        if(newNode.compareTo(parent.key) < 0)
             parent.left.compareAndSet(old, newNode);
         else
             parent.right.compareAndSet(old, newNode);
     }
 
     public String toString() {
-        return root.getLeft().toString(Node.TABSIZE);
+        return root.toString(Node.TABSIZE);
     }
 }
