@@ -279,7 +279,7 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
 
     private void helpMarked(DInfo op) {
         Node right = op.p.getRight(),
-             other = (right == op.l) ? op.p.getLeft() : right;
+             other = right == op.l ? op.p.getLeft() : right;
 
         // dchild CAS step
         casChild(op.gp, op.p, other);
