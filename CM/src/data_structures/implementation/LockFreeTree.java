@@ -135,8 +135,9 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
             this.gp = gp;
             this.p = p;
             this.l = l;
-            this.pupdate = pupdate;
-            this.gpupdate = gpupdate;
+            this.pupdate = new Update(pupdate.getInfo(), pupdate.getState());
+            this.gpupdate = gpupdate == null ? null
+                : new Update(gpupdate.getInfo(), gpupdate.getState());
         }
     }
 
