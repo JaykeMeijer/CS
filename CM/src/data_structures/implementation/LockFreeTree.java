@@ -30,6 +30,13 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         boolean compareAndSet(Info er, Info nr, int es, int ns) {
             return inforef.compareAndSet(er, nr, es, ns);
         }
+
+        public Update clone() {
+            int[] stateHolder = new int[1];
+            Info info = get(stateHolder);
+
+            return new Update(info, stateHolder[0]);
+        }
     }
 
     abstract class Node implements Comparable<Key> {
@@ -132,26 +139,11 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
 
         SearchTuple(Internal gp, Internal p, Leaf l,
                 Update pupdate, Update gpupdate) {
-            Info info;
-            int[] stateHolder = new int[1];
-
             this.gp = gp;
             this.p = p;
             this.l = l;
-
-            if(pupdate != null) {
-                info = pupdate.get(stateHolder);
-                this.pupdate = new Update(info, stateHolder[0]);
-            } else {
-                this.gpupdate = null;
-            }
-
-            if(gpupdate != null) {
-                info = gpupdate.get(stateHolder);
-                this.gpupdate = new Update(info, stateHolder[0]);
-            } else {
-                this.gpupdate = null;
-            }
+            this.pupdate = pupdate == null ? null : pupdate.clone();
+            this.gpupdate = gpupdate == null ? null : gpupdate.clone();
         }
     }
 
@@ -205,7 +197,7 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
                 op = new IInfo(r.p, r.l, newInternal);
                 expInfo = r.pupdate.get(expState);
 
-                //iflag CAS step
+                // iflag CAS step
                 if(r.p.update.compareAndSet(expInfo, op, expState[0], IFLAG)) {
                     helpInsert(op);
                     return;
@@ -233,10 +225,12 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         while(true) {
             r = search(k);
 
-            if(r.l.compareTo(k) != 0) {
+            // Simply return if the key is not in the tree
+            if(r.l.compareTo(k) != 0)
                 return;
-            }
 
+            // Parent and grandparent must be CLEAN in order to perform the
+            // remove operation, make sure they are
             if(r.gpupdate.getState() != CLEAN) {
                 help(r.gpupdate);
             } else if(r.pupdate.getState() != CLEAN) {
@@ -267,9 +261,10 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
             return true;
         } else {
             // Check if another thread marked the parent already
-            info = op.p.update.get(stateHolder);
+            //info = op.p.update.get(stateHolder);
 
-            if(info == op && stateHolder[0] == MARK) {
+            //if(info == op && stateHolder[0] == MARK) {
+            if(op.p.update.getState() == MARK && op.p.update.getInfo() == op) {
                 helpMarked(op);
                 return true;
             }
