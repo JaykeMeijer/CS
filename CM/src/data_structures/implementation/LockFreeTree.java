@@ -129,16 +129,22 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         Internal gp, p;
         Leaf l;
         Update pupdate, gpupdate;
-        Info info;
-        int[] stateHolder = new int[1];
 
         SearchTuple(Internal gp, Internal p, Leaf l,
                 Update pupdate, Update gpupdate) {
+            Info info;
+            int[] stateHolder = new int[1];
+
             this.gp = gp;
             this.p = p;
             this.l = l;
-            info = pupdate.get(stateHolder);
-            this.pupdate = new Update(info, stateHolder[0]);
+
+            if(pupdate != null) {
+                info = pupdate.get(stateHolder);
+                this.pupdate = new Update(info, stateHolder[0]);
+            } else {
+                this.gpupdate = null;
+            }
 
             if(gpupdate != null) {
                 info = gpupdate.get(stateHolder);
