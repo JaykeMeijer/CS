@@ -21,10 +21,12 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
             pred = head;
             curr = pred.next;
             while(curr.compareTo(t) < 0) {
+                // Current node smaller, keep traversing.
                 pred = curr;
                 curr = curr.next;
             }
 
+            // Location found, create node and add it.
             Node node = new ListNode(t);
             node.next = curr;
             pred.next = node;
@@ -41,10 +43,12 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
             pred = head;
             curr = pred.next;
             while(curr.compareTo(t) < 0) {
+                // Current node smaller, keep traversing
                 pred = curr;
                 curr = curr.next;
             }
             if(curr.compareTo(t) == 0)
+                // Element found, remove
                 pred.next = curr.next;
         } finally {
             lock.unlock();

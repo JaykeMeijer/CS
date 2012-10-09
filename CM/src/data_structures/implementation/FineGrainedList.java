@@ -20,11 +20,14 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
             curr.lock();
             try  {
                 while(curr.compareTo(t) < 0) {
+                    // Current node smaller, keep traversing.
                     pred.unlock();
                     pred = curr;
                     curr = curr.next;
                     curr.lock();
                 }
+
+                // Location found, create node and add it.
                 Node newNode = new ListNode(t);
                 newNode.next = curr;
                 pred.next = newNode;
@@ -46,16 +49,15 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
             curr.lock();
             try {
                 while(curr.compareTo(t) < 0) {
+                    // Current node smaller, keep traversing.
                     pred.unlock();
                     pred = curr;
                     curr = curr.next;
                     curr.lock();
                 }
-                if(curr.compareTo(t) == 0) {
+                if(curr.compareTo(t) == 0)
+                    // Element found, remove it.
                     pred.next = curr.next;
-                } else {
-                    System.out.println("Element not found, skipping");
-                }
             } finally {
                 curr.unlock();
             }

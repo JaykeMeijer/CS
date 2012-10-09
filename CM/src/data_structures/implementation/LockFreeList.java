@@ -14,8 +14,11 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
 
     public void add(T t) {
         while(true) {
+            // Find the nodes affected by the addition
             Window window = find(t);
             Node pred = window.pred, curr = window.curr;
+
+            // Create new node and add it.
             Node node = new ListNode(t);
             node.next = new AtomicMarkableReference<Node>(curr, false);
             if(pred.next.compareAndSet(curr, node, false, false))
@@ -26,14 +29,15 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
     public void remove(T t) {
         boolean snip;
         while(true) {
+            // Find the nodes affected by the remove
             Window window = find(t);
             Node pred = window.pred, curr = window.curr;
-            if(curr.compareTo(t) != 0) {
-                System.out.println("Element not found, skipping");
-            } else {
+            if(curr.compareTo(t) == 0) {
+                // Node located, remove it
                 Node succ = curr.next.getReference();
                 snip = curr.next.compareAndSet(succ, succ, false, true);
                 if(!snip)
+                    // Failed to cut it free, retry
                     continue;
                 pred.next.compareAndSet(curr, succ, false, false);
             }
@@ -56,6 +60,8 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
             while(true) {
                 succ = curr.next.get(marked);
                 while(marked[0]) {
+                    // Node is marked, try to remove it. If this fails, start
+                    // over from the beginning.
                     snip = pred.next.compareAndSet(curr, succ, false, false);
                     if(!snip)
                         continue retry;
@@ -63,7 +69,10 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
                     succ = curr.next.get(marked);
                 }
                 if(curr.compareTo(t) >= 0)
+                    // Position found, return affected nodes.
                     return new Window(pred, curr);
+
+                // Current node is smaller, continue traversal.
                 pred = curr;
                 curr = succ;
             }

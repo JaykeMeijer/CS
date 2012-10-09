@@ -56,7 +56,6 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
             while(true) {
                 if(curr == null) {
                     /* Element not in tree. */
-                    System.out.println("Element not found, skipping.");
                     return;
                 } else if(curr.compareTo(t) == 0) { // Element found, now remove.
                     if(curr.left == null && curr.right == null) {

@@ -56,7 +56,6 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
             curr = head.left;
 
             if(curr == null) {
-                System.out.println("Element not found, skipping.");
                 return;
             }
 
@@ -84,7 +83,6 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                         curr = curr.compareTo(t) >= 0 ? curr.left : curr.right;
 
                         if(curr == null) {
-                            System.out.println("Element not found, skipping.");
                             return;
                         }
 
