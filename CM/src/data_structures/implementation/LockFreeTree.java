@@ -194,6 +194,7 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
                 op = new IInfo(r.p, r.l, newInternal);
                 expInfo = r.pupdate.get(expState);
 
+                //iflag CAS step
                 if(r.p.update.compareAndSet(expInfo, op, expState[0], IFLAG)) {
                     helpInsert(op);
                     //System.out.println(this);
@@ -206,7 +207,10 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
     }
 
     private void helpInsert(IInfo op) {
+        // ichild CAS step
         casChild(op.p, op.l, op.newInternal);
+
+        // iunflag CAS step
         op.p.update.compareAndSet(op, op, IFLAG, CLEAN);
     }
 
@@ -238,10 +242,12 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
                 op = new DInfo(r.gp, r.p, r.l, r.pupdate);
                 expInfo = r.gpupdate.get(expState);
 
+                // dflag CAS step
                 if(r.gp.update.compareAndSet(expInfo, op, expState[0], DFLAG)) {
                     if(helpDelete(op))
                         return;
                 } else {
+                    // Failed to perform dflag CAS. First help other operation
                     help(r.gp.update);
                 }
             }
@@ -252,11 +258,12 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         int[] stateHolder = new int[1];
         Info info = op.pupdate.get(stateHolder);
 
+        // mark CAS step
         if(op.p.update.compareAndSet(info, op, stateHolder[0], MARK)) {
             helpMarked(op);
             return true;
         } else {
-            // Check if another thread helped already
+            // Check if another thread marked the parent already
             info = op.p.update.get(stateHolder);
 
             if(info == op && stateHolder[0] == MARK) {
@@ -265,6 +272,9 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
             }
 
             help(op.p.update);
+
+            // Failed to mark the parent node. Remove DFLAG and restart.
+            // backtrack CAS step
             op.gp.update.compareAndSet(op, op, DFLAG, CLEAN);
             return false;
         }
@@ -274,7 +284,10 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         Node right = op.p.getRight(),
              other = (right == op.l) ? op.p.getLeft() : right;
 
+        // dchild CAS step
         casChild(op.gp, op.p, other);
+
+        // dunflag CAS step
         op.gp.update.compareAndSet(op, op, DFLAG, CLEAN);
     }
 
@@ -291,6 +304,7 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
                 break;
             case DFLAG:
                 helpDelete((DInfo)info);
+                break;
         }
     }
 
