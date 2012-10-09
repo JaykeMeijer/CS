@@ -180,16 +180,12 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         int[] expState = new int[1];
         Info expInfo;
 
-        //System.out.println("Adding " + k);
-
         while(true) {
             r = search(k);
             cmp = r.l.compareTo(k);
 
             // Do not allow double key occurrences
             if(cmp == 0) {
-                // FIXME: remove print statements
-                System.out.println("Attempted to insert double key: " + k);
                 return;
             }
 
@@ -206,7 +202,6 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
                 //iflag CAS step
                 if(r.p.update.compareAndSet(expInfo, op, expState[0], IFLAG)) {
                     helpInsert(op);
-                    //System.out.println(this);
                     return;
                 }
 
@@ -229,23 +224,16 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         int[] expState = new int[1];
         Info expInfo;
 
-        //System.out.println("Deleting " + k);
-
         while(true) {
             r = search(k);
 
             if(r.l.compareTo(k) != 0) {
-                // FIXME: remove print statements
-                //System.out.println("Key not found: " + k);
-                //System.out.println(this);
                 return;
             }
 
             if(r.gpupdate.getState() != CLEAN) {
-                //System.out.println("help(r.gpupdate);");
                 help(r.gpupdate);
             } else if(r.pupdate.getState() != CLEAN) {
-                //System.out.println("help(r.pupdate);");
                 help(r.pupdate);
             } else {
                 op = new DInfo(r.gp, r.p, r.l, r.pupdate);
