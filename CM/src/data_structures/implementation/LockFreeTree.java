@@ -129,15 +129,23 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
         Internal gp, p;
         Leaf l;
         Update pupdate, gpupdate;
+        Info info;
+        int[] stateHolder = new int[1];
 
         SearchTuple(Internal gp, Internal p, Leaf l,
                 Update pupdate, Update gpupdate) {
             this.gp = gp;
             this.p = p;
             this.l = l;
-            this.pupdate = new Update(pupdate.getInfo(), pupdate.getState());
-            this.gpupdate = gpupdate == null ? null
-                : new Update(gpupdate.getInfo(), gpupdate.getState());
+            info = pupdate.get(stateHolder);
+            this.pupdate = new Update(info, stateHolder[0]);
+
+            if(gpupdate != null) {
+                info = gpupdate.get(stateHolder);
+                this.gpupdate = new Update(info, stateHolder[0]);
+            } else {
+                this.gpupdate = null;
+            }
         }
     }
 
@@ -228,16 +236,16 @@ public class LockFreeTree<Key extends Comparable<Key>> implements Sorted<Key> {
 
             if(r.l.compareTo(k) != 0) {
                 // FIXME: remove print statements
-                System.out.println("Key not found: " + k);
+                //System.out.println("Key not found: " + k);
                 //System.out.println(this);
                 return;
             }
 
             if(r.gpupdate.getState() != CLEAN) {
-                System.out.println("help(r.gpupdate);");
+                //System.out.println("help(r.gpupdate);");
                 help(r.gpupdate);
             } else if(r.pupdate.getState() != CLEAN) {
-                System.out.println("help(r.pupdate);");
+                //System.out.println("help(r.pupdate);");
                 help(r.pupdate);
             } else {
                 op = new DInfo(r.gp, r.p, r.l, r.pupdate);
