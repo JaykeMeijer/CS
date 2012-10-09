@@ -42,8 +42,7 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
     }
 
     public String toString() {
-        return "LFL - head: " + head + " - head's next: "
-                + head.next.getReference();
+        return "LFL: " + head;
     }
 
     /* Find the two nodes affected in the required operation. */
@@ -86,7 +85,13 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
                 new AtomicMarkableReference<Node>(null, false);
 
         abstract int compareTo(T t);
-        abstract public String toString();
+        public String toString() {
+            String nextNode = "";
+
+            if (next != null)
+                nextNode += " - " + next.getReference();
+            return "Node " + value + nextNode;
+        }
     }
 
     class ListNode extends Node {
@@ -97,29 +102,17 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
         int compareTo(T t) {
             return value.compareTo(t);
         }
-
-        public String toString() {
-            return "List node";
-        }
     }
 
     class FirstNode extends Node {
         int compareTo(T t) {
             return -1;
         }
-
-        public String toString() {
-            return "First node in the list";
-        }
     }
 
     class LastNode extends Node {
         int compareTo(T t) {
             return 1;
-        }
-
-        public String toString() {
-            return "Last node in the list";
         }
     }
 }

@@ -44,18 +44,15 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
                 pred = curr;
                 curr = curr.next;
             }
-            if(curr.compareTo(t) == 0) {
+            if(curr.compareTo(t) == 0)
                 pred.next = curr.next;
-            } else {
-                System.out.println("Element not found, skipping");
-            }
         } finally {
             lock.unlock();
         }
     }
 
     public String toString() {
-        return "CGL - head: " + head + " - head's next: " + head.next;
+        return "CGL: " + head;
     }
 
     abstract class Node {
@@ -63,7 +60,13 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
         Node next;
 
         abstract int compareTo(T t);
-        abstract public String toString();
+        public String toString() {
+            String nextNode = "";
+
+            if (next != null)
+                nextNode += " - " + next;
+            return "Node " + value + nextNode;
+        }
     }
 
     class ListNode extends Node {
@@ -74,29 +77,17 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
         int compareTo(T t) {
             return value.compareTo(t);
         }
-
-        public String toString() {
-            return "List node";
-        }
     }
 
     class FirstNode extends Node {
         int compareTo(T t) {
             return -1;
         }
-
-        public String toString() {
-            return "First node in the list";
-        }
     }
 
     class LastNode extends Node {
         int compareTo(T t) {
             return 1;
-        }
-
-        public String toString() {
-            return "Last node in the list";
         }
     }
 }
