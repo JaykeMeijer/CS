@@ -8,3 +8,4 @@ evaluation.pdf
 *~
 *.dvi
 /build
+Docs/graphs/*

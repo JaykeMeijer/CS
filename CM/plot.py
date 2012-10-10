@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 from __future__ import division
+import os
 import sys
 import matplotlib.pyplot as plt
 
-uniq = {}
+DIR = 'Docs/graphs'
+
+if not os.path.exists(DIR):
+    os.makedirs(DIR)
 
 # Calculate average of duplicates
+uniq = {}
+
 for line in sys.stdin.readlines():
     split = line[:-1].split(' ')
     dtype = split[0]
@@ -62,6 +68,7 @@ for nelements, data in vary_nthreads.iteritems():
         plt.plot(threads_range, sorted_runtimes, '-o', label=dtype.upper())
 
     plt.legend()
+    plt.savefig('%s/elements_%d.pdf' % (DIR, nelements))
 
 # Plot varying number of elements
 for nthreads, data in vary_nelements.iteritems():
@@ -82,6 +89,7 @@ for nthreads, data in vary_nelements.iteritems():
         plt.plot(elements_range, sorted_runtimes, '-o', label=dtype.upper())
 
     plt.legend()
+    plt.savefig('%s/threads_%d.pdf' % (DIR, nthreads))
 
 try:
     plt.show()
