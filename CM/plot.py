@@ -23,7 +23,7 @@ for line in sys.stdin.readlines():
     except ValueError:
         pass
 
-# accumulate results in plottable data
+# Accumulate results in plottable data
 vary_nthreads = {}
 vary_nelements = {}
 
