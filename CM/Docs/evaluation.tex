@@ -150,8 +150,8 @@ estimated this overhead to be much smaller, and thus that the FineGrainedList
 would perform better than the CoarseGrainedList. The measurements show that
 this is not the case, and that the overhead of fine-locking should be taken
 into account when designing a concurrent data structure. In fact, The
-CoarseGrainedList performs better than expected in the design document due to
-a small amount of locking overhead.
+CoarseGrainedList performs better than expected due to a small amount of
+locking overhead.
 
 The measured performance of the tree implementations fit the expectations from
 the design document. The CoarseGrainedTree performs best on one or two threads
@@ -187,7 +187,9 @@ overhead caused by the act of taking and releasing a lock. However, threads in
 a lock-free environment will by definition never have to wait for other
 threads, thus the overhead is constant with respect to the number of threads.
 
-Because the LockFreeList stores values only in leaf nodes, traversal is more
+\subsubsection*{Memory overhead in LockFreeTree}
+
+Because the LockFreeTree stores values only in leaf nodes, traversal is more
 costly than in the other trees. In the design document, we expected that the
 this might cause some overhead when the tree contains large number of elements
 (more nodes to traverse through as opposed to the other trees), on a small
@@ -195,10 +197,20 @@ number of threads (less advantage of wait-free concurrency). The figures in
 appendix DERP confirm this expectation: using one or two threads, the
 CoarseGrainedTree performs a small amount better than the LockFreeTree.
 
-\subsubsection{Waiting overhead on more than four threads}
+\subsubsection*{Locking overhead on more than four threads}
 
+The shape of the graphs in appendix DERP show a clear pattern: The runtimes of
+all tree structures first decrease up to four threads. On more threads, the
+runtimes of the lock-based trees increase again, which seems strange at first
+sight. This can be explained by the fact that the measurements were performed
+on a quad-core machine. Up to four threads, the system schedules each thread to
+run on a separate core, this maximizing performance at four threads. Using more
+than four threads, processors have to constantly switch between different
+threads. Not only is this an expensive operation, but it also comes with the
+possibility of some thread which is holding the lock being suspended, which
+will block all other threads waiting for that lock as well.
 
-\subsection{Summary}
+%\subsection{Summary}
 
 % TODO
 
@@ -210,8 +222,6 @@ CoarseGrainedTree performs a small amount better than the LockFreeTree.
 %    \caption{Execution time versus the number of threads, using X elements}
 %    \label{threadsXelem}
 %\end{figure}
-
-\section{Conclusion}
 
 \begin{thebibliography}{}
 \bibitem{design}
