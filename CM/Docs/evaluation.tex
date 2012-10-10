@@ -1,0 +1,65 @@
+\documentclass[a4paper]{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{alltt,amsmath,hyperref,graphicx}
+\usepackage[usenames,dvipsnames]{xcolor}
+
+% Link colors
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=OliveGreen}
+
+% Set paragraph indentation
+\parindent 0pt
+\parskip 1.0ex plus 0.5ex minus 0.2ex
+
+\title{Concurrency and Multithreading - Performance Evaluation}
+\author{Jayke Meijer, 2526284, jmr251, \url{jayke.meijer@gmail.com} \\
+Taddeüs Kroes, 2526902, tks590, \url{taddeuskroes@gmail.com}}
+
+\def\bigoh{\mathcal{O}}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\pagebreak
+
+\section{Introduction}
+
+This document discusses the design and performance of several
+concurrent data structures.
+
+The data structures are the following: CoarseGrainedList,
+CoarseGrainedTree, FineGrainedList, FineGrainedTree,
+LockFreeList and LockFreeTree.
+
+The difficulty with these data structures is that they are accessed by several threads 
+concurrently, so mutual exclusion has to be provided for the parts where the updates take 
+place.
+
+The design of the datastructures was already given in the design document\cite{design}, 
+and will therefore only be discussed on a high level in this performance evaluation. Any
+difficulties encountered during the implementation will be discussed.
+
+\section{Implementation difficulties}
+
+\section{Performance Evaluation}
+
+\section{Conclusion}
+
+\begin{thebibliography}{}
+
+\bibitem{insert}
+    Binary Search Tree: Insertion
+    \url{http://www.algolist.net/Data_structures/Binary_search_tree/Insertion}
+    
+\bibitem{delete}
+    Binary Search Tree: Removal
+    \url{http://www.algolist.net/Data_structures/Binary_search_tree/Removal}
+    
+\bibitem{design}
+    Taddeüs Kroes, Jayke Meijer. Concurrency and Multithreading - design
+  
+\end{thebibliography}
+
+\end{document}
