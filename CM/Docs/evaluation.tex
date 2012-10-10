@@ -69,9 +69,23 @@ of another thread.
 
 \subsection{LockFreeTree}
 
-The most challenging data structure is the LockFreeTree.
+The most challenging data structure is the LockFreeTree. The design is provided in an 
+article by Ellen, Ruppert, Fatourou and Van Breugel.\cite{lft} This article describes the
+design, gives a pseudocode implementation and proves why it is correct.
+
+The first challenge encountered is that the article uses Compare-And-Swap instructions.
+However, Java does have this operation, it only supports Compare-And-Set instructions. The
+difference between these two is that a Compare-And-Swap returns the original value, even
+when the operation failed. The Compare-And-Set only returns whether the operation 
+succeeded or not. %% Invullen waarom dat geen probleem is, met name HelpDelete()
+
+Another challenge is that the article stores the \texttt{Update} datatype in a single CAS
+word, and uses a part of this word for the flag (only 2 bits) and the rest for the info
+pointer
 
 \section{Performance Evaluation}
+
+\subsection{Used hardware}
 
 \section{Conclusion}
 
@@ -90,7 +104,11 @@ The most challenging data structure is the LockFreeTree.
 \bibitem{delete}
     Binary Search Tree: Removal
     \url{http://www.algolist.net/Data_structures/Binary_search_tree/Removal}
-  
+
+\bibitem{lft}
+    Faith Ellen, Eric Ruppert, Panagiota Fatourou, Franck van Breugel, Non-blocking Search 
+    Trees
+
 \end{thebibliography}
 
 \end{document}
