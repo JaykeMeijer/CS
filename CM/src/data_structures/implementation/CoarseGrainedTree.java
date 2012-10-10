@@ -47,34 +47,37 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
     public void remove(T t) {
-        Node curr, parent = null;
+        Node curr, pred = null;
 
         lock.lock();
         try {
-            /* Traverse the tree to find the node to remove. */
+            // Traverse the tree to find the node to remove
             curr = head;
             while(true) {
                 if(curr == null) {
-                    /* Element not in tree. */
+                    // Element is not in tree
                     return;
-                } else if(curr.compareTo(t) == 0) { // Element found, now remove.
-                    if(curr.left == null && curr.right == null) {
-                        // Childless node, remove link from parent.
-                        replaceNodeWith(curr, parent, null);
-                    } else if(curr.left != null && curr.right == null) {
-                        // Node only has a left child.
-                        replaceNodeWith(curr, parent, curr.left);
-                    } else if(curr.left == null && curr.right != null) {
-                        // Node only has a right child.
-                        replaceNodeWith(curr, parent, curr.right);
-                    } else { // Node has two children.
-                        T newValue = findAndRemoveMinimalValue(curr.right,curr);
+                } else if(curr.compareTo(t) == 0) {
+                    // Element found, now remove
+                    if(curr.left != null && curr.right != null) {
+                        // Node has two children
+                        T newValue = findAndRemoveMinimalValue(curr);
                         curr.value = newValue;
+                    } else if(curr.left != null) {
+                        // Node only has a left child
+                        replaceNodeWith(curr, pred, curr.left);
+                    } else if(curr.right != null) {
+                        // Node only has a right child
+                        replaceNodeWith(curr, pred, curr.right);
+                    } else {
+                        // Childless node, remove link from pred
+                        replaceNodeWith(curr, pred, null);
                     }
                     return;
-                } else { // Element not yet found, continue traversal.
-                    parent = curr;
-                    curr = (curr.compareTo(t) >= 0 ? curr.left : curr.right);
+                } else {
+                    // Element not yet found, continue traversal
+                    pred = curr;
+                    curr = curr.compareTo(t) >= 0 ? curr.left : curr.right;
                 }
             }
         } finally {
@@ -86,26 +89,32 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         return head == null ? "(null)" : head.stringify(Node.TABSIZE);
     }
 
-    /*
-     * Find the minimal value of the given subtree and remove it. The minimal
-     * value is the node found by only traversing left. For the removal the
-     * parent of this subtree is needed as well.
+    /**
+     * Find the minimal value of the given subtree and remove it.
      *
-     * @param   Node    tree    The head of the subtree to traverse.
-     * @param   Node    parent  The parent of the subtree.
-     * @return  T               The item from the node that was just removed.
+     * The minimal value is the node found by only traversing left. For the
+     * removal the parent of this subtree is needed as well.
+     *
+     * @param   Node    pred  The parent of the subtree.
+     * @return  T             The item from the node that was just removed.
      */
-    private T findAndRemoveMinimalValue(Node tree, Node subtreeParent) {
-        Node parent = subtreeParent, curr = tree;
-        while(true) { //Find the node with the smallest value in the (sub)tree.
+    private T findAndRemoveMinimalValue(Node parent) {
+        Node pred = parent, curr = parent.right;
+
+        // Find the node with the smallest value in the (sub)tree.
+        while(true) {
             if(curr.left != null) {
                 parent = curr;
                 curr = curr.left;
             } else {
-                if(curr.right != null) // Node still has a right child.
+                if(curr.right != null) {
+                    // Node still has a right child.
                     replaceNodeWith(curr, parent, curr.right);
-                else // Node is childless.
+                } else {
+                    // Node is childless.
                     replaceNodeWith(curr, parent, null);
+                }
+
                 return curr.value;
             }
         }
@@ -119,18 +128,16 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
      * @param   Node    replacement The node to use as replacement.
      */
     private void replaceNodeWith(Node curr, Node parent, Node replacement) {
-        if(parent == null) { // Node is head. Replacement is new head.
+        if(parent == null) {
+            // Node is the current head, replacement is the new head
             head = replacement;
         } else {
-            // Node is not head. Replacement now replaces
-            // current node as child of parent.
-            if(curr.compareTo(parent.value) <= 0) {
-                // Left child of parent.
+            // Node is not the head, replacement now replaces current node as
+            // child of parent
+            if(curr == parent.left)
                 parent.left = replacement;
-            } else {
-                // Right child of parent.
+            else
                 parent.right = replacement;
-            }
         }
     }
 
