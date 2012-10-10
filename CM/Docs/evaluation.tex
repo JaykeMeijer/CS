@@ -1,7 +1,7 @@
 \documentclass[a4paper]{article}
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
-\usepackage{alltt,amsmath,hyperref,graphicx}
+\usepackage{alltt,amsmath,hyperref,graphicx,float}
 \usepackage[usenames,dvipsnames]{xcolor}
 
 % Link colors
@@ -123,20 +123,21 @@ threads are operating concurrently.
 The actual performance tests are done on a machine with an AMD 955 CPU
 (quad-core, 3.2GHz), running Xubuntu 12.04.1 LTS.
 
-\subsection{....}
+\subsection{Evaluation}
 
-Figure HERP shows that the runtime of the list structures grows exponentially
-as the number of elements increases, while the runtime of the tree structures
-grows linearly.
+The figures in appendix \ref{app:vary_nelements} shows that the runtime of the
+list structures grows exponentially as the number of elements increases, while
+the runtime of the tree structures grows linearly.
 
 As expected, the coarse-grained data structures perform better than the
-fine-grained and lock-free data structures on a single thread, because the
-overhead of locks and atomic operations is smaller. This is still the case when
-using two threads. Starting at four threads, the lock-free implementations
-become the best performing data structures. The FineGrainedList performs worse
-than the CoarseGrainedList and the LockFreeList in almost all cases, except on
-a single thread, where the LockFreeList is the slowest. This means that on a
-single thread, the overhead of atomic operations is larger than the overhead of
+fine-grained and lock-free data structures on a single thread (figure
+\ref{fig:threads_1}), because the overhead of locks and atomic operations is
+smaller. This is still the case when using two threads. Starting at four
+threads (figure \ref{fig:threads_4}), the lock-free implementations become the
+best performing data structures. The FineGrainedList performs worse than the
+CoarseGrainedList and the LockFreeList in almost all cases, except on a single
+thread, where the LockFreeList is the slowest. This means that on a single
+thread, the overhead of atomic operations is larger than the overhead of
 fine-grained locking. The design document predicted that the FineGrainedList
 would not perform very good, because of the change of ``congestions'' (when one
 thread is waiting for another to release a lock before continuing traversal).
@@ -145,7 +146,7 @@ which is indeed the case (as opposed to the other list implementations).
 
 Furthermore, the overhead caused by fine-grained locking in a list structure
 seems to be killing for its performance. The CoarseGrainedList performs better
-than the FineGrainedList in all measurements.  In the design document, we
+than the FineGrainedList in all measurements. In the design document, we
 estimated this overhead to be much smaller, and thus that the FineGrainedList
 would perform better than the CoarseGrainedList. The measurements show that
 this is not the case, and that the overhead of fine-locking should be taken
@@ -194,34 +195,29 @@ costly than in the other trees. In the design document, we expected that the
 this might cause some overhead when the tree contains large number of elements
 (more nodes to traverse through as opposed to the other trees), on a small
 number of threads (less advantage of wait-free concurrency). The figures in
-appendix DERP confirm this expectation: using one or two threads, the
-CoarseGrainedTree performs a small amount better than the LockFreeTree.
+appendix \ref{app:vary_nthreads} confirm this expectation: using one or two
+threads, the CoarseGrainedTree performs a small amount better than the
+LockFreeTree.
 
 \subsubsection*{Locking overhead on more than four threads}
 
-The shape of the graphs in appendix DERP show a clear pattern: The runtimes of
-all tree structures first decrease up to four threads. On more threads, the
-runtimes of the lock-based trees increase again, which seems strange at first
-sight. This can be explained by the fact that the measurements were performed
-on a quad-core machine. Up to four threads, the system schedules each thread to
-run on a separate core, this maximizing performance at four threads. Using more
-than four threads, processors have to constantly switch between different
-threads. Not only is this an expensive operation, but it also comes with the
-possibility of some thread which is holding the lock being suspended, which
-will block all other threads waiting for that lock as well.
+The shape of the graphs in appendix \ref{app:vary_nthreads} show a clear
+pattern: The runtimes of all tree structures first decrease up to four threads.
+On more threads, the runtimes of the lock-based trees increase again, which
+seems strange at first sight. This can be explained by the fact that the
+measurements were performed on a quad-core machine. Up to four threads, the
+system schedules each thread to run on a separate core, this maximizing
+performance at four threads. Using more than four threads, processors have to
+constantly switch between different threads. Not only is this an expensive
+operation, but it also comes with the possibility of some thread which is
+holding the lock being suspended, which will block all other threads waiting
+for that lock as well.
 
 %\subsection{Summary}
 
 % TODO
 
 \subsection{Review of expectations in design document}
-
-%The actual result is in the following graph:
-%\begin{figure}
-%    %\includegraphics[scale=0.5]{images/}
-%    \caption{Execution time versus the number of threads, using X elements}
-%    \label{threadsXelem}
-%\end{figure}
 
 \begin{thebibliography}{}
 \bibitem{design}
@@ -242,6 +238,62 @@ will block all other threads waiting for that lock as well.
 \bibitem{lft}
     Faith Ellen, Eric Ruppert, Panagiota Fatourou, Franck van Breugel, Non-blocking Search
     Trees
+
+\appendix
+\section{Measurements using increasing number elements}
+\label{app:vary_nelements}
+
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/threads_1.pdf}
+    \caption{Varying number of elements using 1 threads}
+    \label{fig:threads_1}
+\end{figure}
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/threads_2.pdf}
+    \caption{Varying number of elements using 2 threads}
+    \label{fig:threads_2}
+\end{figure}
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/threads_4.pdf}
+    \caption{Varying number of elements using 4 threads}
+    \label{fig:threads_4}
+\end{figure}
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/threads_8.pdf}
+    \caption{Varying number of elements using 8 threads}
+    \label{fig:threads_8}
+\end{figure}
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/threads_10.pdf}
+    \caption{Varying number of elements using 10 threads}
+    \label{fig:threads_10}
+\end{figure}
+
+\pagebreak
+
+\section{Measurements using increasing number threads}
+\label{app:vary_nthreads}
+
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/elements_100000.pdf}
+    \caption{Varying number of threads, 100000 elements}
+    \label{fig:elements_100000}
+\end{figure}
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/elements_300000.pdf}
+    \caption{Varying number of threads, 300000 elements}
+    \label{fig:elements_300000}
+\end{figure}
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/elements_500000.pdf}
+    \caption{Varying number of threads, 500000 elements}
+    \label{fig:elements_500000}
+\end{figure}
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/elements_1000000.pdf}
+    \caption{Varying number of threads, 1000000 elements}
+    \label{fig:elements_1000000}
+\end{figure}
 
 \end{thebibliography}
 \end{document}
