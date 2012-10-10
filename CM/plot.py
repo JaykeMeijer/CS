@@ -83,4 +83,7 @@ for nthreads, data in vary_nelements.iteritems():
 
     plt.legend()
 
-plt.show()
+try:
+    plt.show()
+except KeyboardInterrupt:
+    pass
