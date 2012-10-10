@@ -71,21 +71,63 @@ of another thread.
 
 The most challenging data structure is the LockFreeTree. The design is provided in an 
 article by Ellen, Ruppert, Fatourou and Van Breugel.\cite{lft} This article describes the
-design, gives a pseudocode implementation and proves why it is correct.
+algorithms, gives a pseudocode implementation and proves why it is correct.
 
 The first challenge encountered is that the article uses Compare-And-Swap instructions.
-However, Java does have this operation, it only supports Compare-And-Set instructions. The
-difference between these two is that a Compare-And-Swap returns the original value, even
-when the operation failed. The Compare-And-Set only returns whether the operation 
-succeeded or not. %% Invullen waarom dat geen probleem is, met name HelpDelete()
+However, Java does not have this operation, it only supports Compare-And-Set instructions.
+The difference between these two is that a Compare-And-Swap returns the original value,
+even when the operation failed. The Compare-And-Set only returns whether the operation 
+succeeded or not.
 
-Another challenge is that the article stores the \texttt{Update} datatype in a single CAS
-word, and uses a part of this word for the flag (only 2 bits) and the rest for the info
-pointer
+This is potentially a problem in the \texttt{HelpDelete()} function, where the result of
+the CAS operation is not only used to check whether the operation succeeded, but is also
+used for another check where it is verified if the node is marked. However, in this
+case we can argue that this is not a problem. One of the properties of the design is that
+a marked node will never be unmarked or changed. Therefore, if a node is marked, no 
+further checks have to be atomic and can be performed without any harm.
+
+Another challenge is that the article stores the \texttt{Update} field in a single CAS
+word, and uses a part of this word for the state(only 2 bits) and the rest for the pointer
+to the info record. However, this kind of storage is not possible in Java. The solution is
+to use the \texttt{AtomicStampedReference<V>} class. This can store a reference to an
+object and an integer. The integer can be used to store the state, while the reference 
+points to an info object. Both can be read and updated in a single atomic step by
+\texttt{get()} and \texttt{compareAndSet()} respectively.
+
+Another challenge that we encountered is the \texttt{Search()} function. In the pseudocode
+this function returns five variables. Java only supports the return of one variable, or
+you have to create an array of one element, pass it on to the function as an argument and
+store the return value in this argument. This would create rather messy code. Our solution 
+is to create an object, called \texttt{SearchTuple}. This contains the five values
+returned by the search function. That function will now return a SearchTuple.
+
+There is one thing to be aware of with this construction. The pseudocode search function
+uses \texttt{gpupdate} and \texttt{pupdate} both internally and as return values. However,
+in Java this makes it a reference to the \emph{update} field of the node found. This means
+it can be changed by another thread. However, the result returned by search (ie the
+searchTuple) should never change. Therefore the \texttt{pupdate} and \texttt{gpupdate} are
+cloned in the constructor of the searchTuple, so they do not point to the update field of
+a node but to a new, unique, update object.
 
 \section{Performance Evaluation}
 
 \subsection{Used hardware}
+
+The tests have been performed on two different systems. The first is a server at the VU,
+reachable at \url{fluit.few.vu.nl}. This machine has eight cores and is suitable for true
+parallelism testing. However, due to the high usage on this machine, the performance 
+figures are not reliable. This machine is only used to verify that the data structures 
+work even when a large number of threads are operating concurrently.
+
+The actual performance tests are done on a machine with an Intel i7 CPU. This machine has
+4 cores and multithreading, meaning that the hardware supports 8 concurrent threads (even
+though only 4 are actually active). This machine runs Gentoo.
+
+\subsection{Effect of the number of elements}
+
+\subsection{Effect of the number of threads}
+
+\subsection{Effect of the waiting period}
 
 \section{Conclusion}
 
@@ -110,5 +152,4 @@ pointer
     Trees
 
 \end{thebibliography}
-
 \end{document}
