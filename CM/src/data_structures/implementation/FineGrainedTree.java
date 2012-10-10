@@ -59,22 +59,25 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                 return;
             }
 
-            /* Traverse the tree to find the node to remove. */
+            // Traverse the tree to find the node to remove
             curr.lock();
             try {
                 while(true) {
-                    if(curr.compareTo(t) == 0) { // Element found, now remove.
-                        if(curr.left == null && curr.right == null) {
-                            // Childless node, remove link from parent.
-                            replaceNodeWith(curr, pred, null);
-                        } else if(curr.left != null && curr.right == null) {
-                            // Node only has a left child.
+                    if(curr.compareTo(t) == 0) {
+                        // Element found, now remove
+                        if(curr.left != null && curr.right != null) {
+                            // Node has two children
+                            T newValue = findAndRemoveMinimalValue(curr);
+                            curr.value = newValue;
+                        } else if(curr.left != null) {
+                            // Node only has a left child
                             replaceNodeWith(curr, pred, curr.left);
-                        } else if(curr.left == null && curr.right != null) {
-                            // Node only has a right child.
+                        } else if(curr.right != null) {
+                            // Node only has a right child
                             replaceNodeWith(curr, pred, curr.right);
-                        } else { // Node has two children.
-                            curr.value = findAndRemoveMinimalValue(curr);
+                        } else {
+                            // Childless node, remove link from pred
+                            replaceNodeWith(curr, pred, null);
                         }
                         return;
                     } else { // Element not yet found, continue traversal.
@@ -82,9 +85,8 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                         pred = curr;
                         curr = curr.compareTo(t) >= 0 ? curr.left : curr.right;
 
-                        if(curr == null) {
+                        if(curr == null)
                             return;
-                        }
 
                         curr.lock();
                     }
@@ -98,10 +100,11 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         }
     }
 
-    /*
-     * left the minimal value of the given subtree and remove it. The minimal
-     * value is the node found by only traversing left. For the removal the
-     * parent of this subtree is needed as well.
+    /**
+     * Find the minimal value of the given subtree and remove it.
+     *
+     * The minimal value is the node found by only traversing left. For the
+     * removal the parent of this subtree is needed as well.
      *
      * @param   Node    pred  The parent of the subtree.
      * @return  T             The item from the node that was just removed.
@@ -137,10 +140,13 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
     private void replaceNodeWith(Node curr, Node parent, Node replacement) {
         // Node is not head. Replacement now replaces
         // current node as child of parent.
-        if(parent.value == null || curr.compareTo(parent.value) <= 0) // Left child of parent.
+        if(parent.value == null || curr == parent.left) {
+            // Left child of parent.
             parent.left = replacement;
-        else // Right child of parent.
+        } else {
+            // Right child of parent.
             parent.right = replacement;
+        }
     }
 
     public String toString() {
