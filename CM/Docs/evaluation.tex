@@ -34,20 +34,54 @@ CoarseGrainedTree, FineGrainedList, FineGrainedTree,
 LockFreeList and LockFreeTree.
 
 The difficulty with these data structures is that they are accessed by several threads 
-concurrently, so mutual exclusion has to be provided for the parts where the updates take 
-place.
+concurrently, so it has to be guaranteed that each update succeeds, even when separate
+updates by different threads interfere.
 
-The design of the datastructures was already given in the design document\cite{design}, 
-and will therefore only be discussed on a high level in this performance evaluation. Any
+The design of the data structures was already given in the design document\cite{design}. 
+These will therefore only be discussed on a high level in this performance evaluation. Any
 difficulties encountered during the implementation will be discussed.
 
 \section{Implementation difficulties}
+
+\subsection{Lists and CoarseGrainedTree}
+Most of the data structures were straightforward to implement. The CoarseGrainedList,
+FineGrainedList and LockFreeList were described in the book by Herlihy and 
+Shavit\cite{book}. These did therefore not present any problems during the implementation.
+
+The CoarseGrainedTree had to be designed by ourself, but only required the placing of a 
+lock mechanism around standard tree insertions and removals. The used algorithms for 
+inserting and removing in a Binary Search Tree are based on standard BST operations.
+\cite{insert}\cite{delete}
+
+\subsection{FineGrainedTree}
+
+The FineGrainedTree is more of a challenge to implement. The basic idea is the same as the
+FineGrainedList. It uses hand-over-hand locking to traverse through the list. However,
+instead of locking the successor you first have to determine whether to lock the left or
+the right child node.
+
+The challenge is what to do during the removal of an element. When deleting a node that
+has two children, the in-order successor of this node has to be found. This is the node
+with the smallest value in the right subtree of the node to delete. However, it is 
+possible that another thread is performing an operation in this subtree. Therefore 
+traversal through this subtree should be done with locking as well, to prevent overtaking
+of another thread.
+
+\subsection{LockFreeTree}
+
+The most challenging data structure is the LockFreeTree.
 
 \section{Performance Evaluation}
 
 \section{Conclusion}
 
-\begin{thebibliography}{}
+\begin{thebibliography}{}    
+\bibitem{design}
+    Taddeüs Kroes, Jayke Meijer, Concurrency and Multithreading - Design
+
+\bibitem{book}
+    Maurice Herlihy \& Nir Shavit, The Art of Multiprocessor Programming. Morgan Kaufmann.         
+    2012.
 
 \bibitem{insert}
     Binary Search Tree: Insertion
@@ -56,9 +90,6 @@ difficulties encountered during the implementation will be discussed.
 \bibitem{delete}
     Binary Search Tree: Removal
     \url{http://www.algolist.net/Data_structures/Binary_search_tree/Removal}
-    
-\bibitem{design}
-    Taddeüs Kroes, Jayke Meijer. Concurrency and Multithreading - design
   
 \end{thebibliography}
 
