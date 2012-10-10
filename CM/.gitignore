@@ -6,4 +6,5 @@ evaluation.pdf
 *.gz
 *.out
 *~
+*.dvi
 /build

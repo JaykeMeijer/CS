@@ -125,9 +125,39 @@ though only 4 are actually active). This machine runs Gentoo.
 
 \subsection{Effect of the number of elements}
 
+The first variable in performance that will be evaluated is the number of elements. The
+expectation in the design document was that all the lists will perform comparably bad with
+lots of elements, since searching through a list costs more time than in a tree. It was 
+also expected that the performance would increase in the following order: CoarseGrained,
+FineGrained, LockFree.
+
+The actual results are in the following graphs:
+\begin{figure}
+    %\includegraphics[scale=0.5]{images/}
+    \caption{Execution time versus the number of elements, using 4 threads}
+    \label{elem_4thread}
+\end{figure}
+\begin{figure}
+    %\includegraphics[scale=0.5]{images/}
+    \caption{Execution time versus the number of elements, using 8 threads}
+    \label{elem_8thread}
+\end{figure}
+
 \subsection{Effect of the number of threads}
 
-\subsection{Effect of the waiting period}
+The second variable in performance is the number of threads. The expectation was that the
+performance was once again improving with the tree, except with the CoarseGrainedTree, 
+since no concurrent execution is possible there. The two other trees are expected to
+perform better than the lists with a large number of concurrent thread, since once they
+operate in a different subtree, threads no longer interfere, were as this does happen in
+the list.
+
+The actual result is in the following graph:
+\begin{figure}
+    %\includegraphics[scale=0.5]{images/}
+    \caption{Execution time versus the number of threads, using 5040 elements}
+    \label{thread}
+\end{figure}
 
 \section{Conclusion}
 
