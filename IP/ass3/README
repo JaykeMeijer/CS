@@ -1,0 +1,4 @@
+This is the required directory structure assignment 3.
+
+Put your "paper" solution into the "paper" directory, hotel in "hotel", etc.
+Put your report in the "doc" directory and write a Makefile in the root directory.
