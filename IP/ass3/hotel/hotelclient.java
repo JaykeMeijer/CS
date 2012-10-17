@@ -29,6 +29,11 @@ public class hotelclient
         }
     }
 
+    /**
+     * Handle the request for a list of free rooms.
+     *
+     * @param   Hotel   c   The RMI object.
+     */
     static private void handleList(Hotel c) {
         int[] rooms = new int[3];
         try {
@@ -40,6 +45,11 @@ public class hotelclient
         System.out.println(rooms[0] + "\t" + rooms[1] + "\t" + rooms[2]);
     }
 
+    /**
+     * Handle the request for booking a room.
+     *
+     * @param   String[] args   The data necessary for booking the room.
+     */
     static private void handleBook(String[] args, Hotel c) {
         String name = "";
         if(args.length < 4)
@@ -60,6 +70,11 @@ public class hotelclient
         }
     }
 
+    /**
+     * Handle the request for a list of guests.
+     *
+     * @param   Hotel   c   The RMI object.
+     */
     static private void handleGuests(Hotel c) {
         try {
             String[] guests = c.guests();
@@ -71,6 +86,9 @@ public class hotelclient
         }
     }
 
+    /**
+     * Print the usage and exit.
+     */
     static private void printUsage() {
         System.out.println("Available options:\n\thotelclient <address> list\n" +
                            "\thotelclient <address> book <type> <Guest name>\n" +

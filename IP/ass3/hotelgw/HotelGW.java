@@ -5,7 +5,6 @@ import java.io.*;
 
 public class HotelGW
 {
-
     public static void main(String[] args)
     {
         ServerSocket serverSocket;
@@ -18,18 +17,24 @@ public class HotelGW
 
         while(true) {
             try {
-                // Create socket and coresponding datastreams
+                // Create socket and corresponding datastreams
                 Socket connection = serverSocket.accept();
                 DataInputStream in =
                     new DataInputStream(connection.getInputStream());
                 DataOutputStream out =
                     new DataOutputStream(connection.getOutputStream());
 
+                // Receive the command
                 byte[] input = new byte[1024];
                 int nread = in.read(input);
                 String inputString = new String(input);
-                out.writeBytes(handleRequest(
-                    inputString.substring(0, detectLength(input))));
+
+                // Handle the request and send the data over the socket.
+                String reply = handleRequest(inputString.substring(0,
+                    detectLength(input)));
+                out.writeBytes(reply);
+
+                // Set up for a new run
                 connection.close();
                 input = null;
             } catch (IOException e) {
@@ -47,7 +52,6 @@ public class HotelGW
      */
     static private String handleRequest(String req) {
         String[] args = req.split(" ");
-        System.out.println(req);
         try
         {
             Hotel c = (Hotel) Naming.lookup("rmi://localhost/HotelService");

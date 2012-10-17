@@ -1,4 +1,5 @@
 CC = gcc
+JC = javac
 RPC = rpcgen
 CFLAGS = -O2
 RPCFLAGS = -C
@@ -21,6 +22,11 @@ paperclient: paper/paperclient.c paper/paperserver.h
 	$(CC) -c paper/paperserver_xdr.c $(CFLAGS)
 	$(CC) -o paperclient paperclient.o paperserver_clnt.o paperserver_xdr.o \
 		-lnsl $(CFLAGS)
+
+hotel:
+	hotel/make
+
+hotelgw: hotel
 
 hotelgwclient: hotelgwclient/hotelgwclient.c
 	$(CC) -o exe hotelgwclient/hotelgwclient.c $(CFLAGS)

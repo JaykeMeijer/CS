@@ -82,7 +82,7 @@ ssize_t writen(int fd, const void *vptr, size_t n) {
 }
 
 int main(int argc, char *argv[]) {
-    int sockfd, nread, i, ptr = 0;
+    int sockfd, nread = -1, i, ptr = 0, total = 0;
     char buffer[1024] = "";
     char input[1024] = "";
 
@@ -97,8 +97,6 @@ int main(int argc, char *argv[]) {
     }
     input[strlen(input)] = '\0';
 
-    printf("%s\n", input);
-
     create_connect_socket(argv[1], &sockfd);
 
     // Send the request to the server.
@@ -107,20 +105,23 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    // Read the response of the server.
-    nread = read(sockfd, buffer, sizeof(buffer));
-    if(nread < 0) {
-        perror("Error reading from socket");
-        exit(1);
+    // Read the response of the server. Do this untill the socket gets closed,
+    // to be sure to receive everything.
+    while(nread != 0) {
+        nread = read(sockfd, buffer, sizeof(buffer));
+        if(nread < 0) {
+            perror("Error reading from socket");
+            exit(1);
+        }
+
+        total += nread;
+
+        // Print the answer
+        for(i = 0; i < nread; i++)
+            printf("%c", buffer[i]);
     }
 
-    printf("Received %i bytes\n", nread);
-
-    // Print the answer
-    for(i = 0; i < nread; i++)
-        printf("%c", buffer[i]);
-
-    /* Close the socket and exit the program. */
+    // Close the socket and exit the program.
     close(sockfd);
     return 0;
 }
