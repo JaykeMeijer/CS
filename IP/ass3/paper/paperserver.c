@@ -58,6 +58,12 @@ add_out *add_proc_1_svc(paper *in, struct svc_req *rqstp) {
             curr = curr->next;
     }
 
+    if(curr->id + 1 < 0) {
+        // ID wrap around, system limit reached.
+        out = -1;
+        return &out;
+    }
+
     // Store paper container at located point in the list.
     new->id = curr->id + 1;
     new->next = curr->next;

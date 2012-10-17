@@ -2,9 +2,9 @@ JC = javac
 
 all: hotelgw
 
-hotelgw: Hotel.java HotelGW.java
+hotelgw: Hotel.java hotelgw.java
 	$(JC) Hotel.java
-	$(JC) HotelGW.java
+	$(JC) hotelgw.java
 
 clean:
 	rm -f *.class
