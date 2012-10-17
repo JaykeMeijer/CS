@@ -96,5 +96,3 @@ public class hotelclient
         System.exit(1);
     }
 }
-
-

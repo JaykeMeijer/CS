@@ -53,6 +53,8 @@ void handle_add(int argc, char **argv, CLIENT* cl) {
     if (out==NULL) {
         printf("Error: %s\n",clnt_sperror(cl,argv[1]));
         exit(1);
+    } else if (*out == -1) {
+        printf("Error: system is full\n");
     } else {
         printf("%d\n", *out);
     }
@@ -87,7 +89,6 @@ void handle_list(CLIENT* cl) {
         printf("%i\t", reply->id);
         printf("%s\t", reply->author_name);
         printf("%s", reply->paper_title);
-        //printf("%i\t%s\t%s", reply->id, reply->author_name, reply->paper_title);
         if(reply->next != NULL) {
             reply = reply->next;
             printf("\t");

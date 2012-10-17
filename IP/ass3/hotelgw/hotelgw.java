@@ -3,7 +3,7 @@ import java.rmi.Naming;
 import java.net.*;
 import java.io.*;
 
-public class HotelGW
+public class hotelgw
 {
     public static void main(String[] args)
     {

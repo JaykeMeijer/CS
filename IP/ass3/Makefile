@@ -14,7 +14,7 @@ hotel: hotel/hotelclient.java hotel/hotelserver.java hotel/Hotel.java \
 hotelgwclient: hotelgwclient/hotelgwclient.c
 	$(MAKE) -C hotelgwclient
 
-hotelgw: hotelgw/Hotel.java hotelgw/HotelGW.java
+hotelgw: hotelgw/Hotel.java hotelgw/hotelgw.java
 	$(MAKE) -C hotelgw
 
 restart_portmap:
