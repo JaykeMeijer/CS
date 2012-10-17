@@ -1,42 +1,30 @@
 CC = gcc
 JC = javac
-RPC = rpcgen
 CFLAGS = -O2
-RPCFLAGS = -C
 
-all: paperserver paperclient hotelgwclient
+all: paper hotelgwclient hotelgw hotel
 
-rpc: paper/paperserver.x
-	$(RPC) $(RPCFLAGS) paper/paperserver.x
+paper: paper/paperserver.c paper/paperserver.h
+	$(MAKE) -C paper
 
-paperserver: paper/paperserver.c paper/paperserver.h
-	$(CC) -c paper/paperserver.c $(CFLAGS)
-	$(CC) -c paper/paperserver_svc.c $(CFLAGS)
-	$(CC) -c paper/paperserver_xdr.c $(CFLAGS)
-	$(CC) -o paperserver paperserver.o paperserver_svc.o paperserver_xdr.o \
-		-lnsl $(CFLAGS)
-
-paperclient: paper/paperclient.c paper/paperserver.h
-	$(CC) -c paper/paperclient.c $(CFLAGS)
-	$(CC) -c paper/paperserver_clnt.c $(CFLAGS)
-	$(CC) -c paper/paperserver_xdr.c $(CFLAGS)
-	$(CC) -o paperclient paperclient.o paperserver_clnt.o paperserver_xdr.o \
-		-lnsl $(CFLAGS)
-
-hotel:
-	hotel/make
-
-hotelgw: hotel
+hotel: hotel/hotelclient.java hotel/hotelserver.java hotel/Hotel.java \
+		hotel/HotelImpl.java
+	$(MAKE) -C hotel
 
 hotelgwclient: hotelgwclient/hotelgwclient.c
-	$(CC) -o exe hotelgwclient/hotelgwclient.c $(CFLAGS)
+	$(MAKE) -C hotelgwclient
+
+hotelgw: hotelgw/Hotel.java hotelgw/HotelGW.java
+	$(MAKE) -C hotelgw
 
 restart_portmap:
 	sudo service portmap stop
 	sudo rpcbind -wi
 
 clean:
-	rm -f *.o
-	rm -f paperserver
-	rm -f paperclient
-	rm -f hotelgwclient/hotelgwclient
+	$(MAKE) clean -C paper
+	$(MAKE) clean -C hotel
+	$(MAKE) clean -C hotelgwclient
+	$(MAKE) clean -C hotelgw
+
+.PHONY: hotel hotelgwclient paper hotelgw
