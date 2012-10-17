@@ -1,0 +1,293 @@
+\documentclass[a4paper]{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{alltt,amsmath,hyperref,graphicx,float}
+\usepackage[usenames,dvipsnames]{xcolor}
+
+% Link colors
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=OliveGreen}
+
+% Set paragraph indentation
+\parindent 0pt
+\parskip 1.0ex plus 0.5ex minus 0.2ex
+
+\title{Concurrency and Multithreading - Performance Evaluation}
+\author{Jayke Meijer, 2526284, jmr251, \url{jayke.meijer@gmail.com} \\
+Taddeüs Kroes, 2526902, tks590, \url{taddeuskroes@gmail.com}}
+
+\def\bigoh{\mathcal{O}}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\pagebreak
+
+\section{Introduction}
+
+This document discusses the design and performance of several
+concurrent data structures.
+
+The data structures are the following: CoarseGrainedList,
+CoarseGrainedTree, FineGrainedList, FineGrainedTree,
+LockFreeList and LockFreeTree.
+
+The difficulty with these data structures is that they are accessed by several threads
+concurrently, so it has to be guaranteed that each update succeeds, even when separate
+updates by different threads interfere.
+
+The design of the data structures was already given in the design document\cite{design}.
+These will therefore only be discussed on a high level in this performance evaluation. Any
+difficulties encountered during the implementation will be discussed.
+
+\section{Implementation difficulties}
+
+\subsection{Lists and CoarseGrainedTree}
+Most of the data structures were straightforward to implement. The CoarseGrainedList,
+FineGrainedList and LockFreeList were described in the book by Herlihy and
+Shavit\cite{book}. These did therefore not present any problems during the implementation.
+
+The CoarseGrainedTree had to be designed by ourself, but only required the placing of a
+lock mechanism around standard tree insertions and removals. The used algorithms for
+inserting and removing in a Binary Search Tree are based on standard BST operations.
+\cite{insert}\cite{delete}
+
+\subsection{FineGrainedTree}
+
+The FineGrainedTree is more of a challenge to implement. The basic idea is the same as the
+FineGrainedList. It uses hand-over-hand locking to traverse through the list. However,
+instead of locking the successor you first have to determine whether to lock the left or
+the right child node.
+
+The challenge is what to do during the removal of an element. When deleting a node that
+has two children, the in-order successor of this node has to be found. This is the node
+with the smallest value in the right subtree of the node to delete. However, it is
+possible that another thread is performing an operation in this subtree. Therefore
+traversal through this subtree should be done with locking as well, to prevent overtaking
+of another thread.
+
+\subsection{LockFreeTree}
+
+The most challenging data structure is the LockFreeTree. The design is provided in an
+article by Ellen, Ruppert, Fatourou and Van Breugel.\cite{lft} This article describes the
+algorithms, gives a pseudocode implementation and proves why it is correct.
+
+The first challenge encountered is that the article uses Compare-And-Swap instructions.
+However, Java does not have this operation, it only supports Compare-And-Set instructions.
+The difference between these two is that a Compare-And-Swap returns the original value,
+even when the operation failed. The Compare-And-Set only returns whether the operation
+succeeded or not.
+
+This is potentially a problem in the \texttt{HelpDelete()} function, where the result of
+the CAS operation is not only used to check whether the operation succeeded, but is also
+used for another check where it is verified if the node is marked. However, in this
+case we can argue that this is not a problem. One of the properties of the design is that
+a marked node will never be unmarked or changed. Therefore, if a node is marked, no
+further checks have to be atomic and can be performed without any harm.
+
+Another challenge is that the article stores the \texttt{Update} field in a single CAS
+word, and uses a part of this word for the state(only 2 bits) and the rest for the pointer
+to the info record. However, this kind of storage is not possible in Java. The solution is
+to use the \texttt{AtomicStampedReference<V>} class. This can store a reference to an
+object and an integer. The integer can be used to store the state, while the reference
+points to an info object. Both can be read and updated in a single atomic step by
+\texttt{get()} and \texttt{compareAndSet()} respectively.
+
+Another challenge that we encountered is the \texttt{Search()} function. In the pseudocode
+this function returns five variables. Java only supports the return of one variable, or
+you have to create an array of one element, pass it on to the function as an argument and
+store the return value in this argument. This would create rather messy code. Our solution
+is to create an object, called \texttt{SearchTuple}. This contains the five values
+returned by the search function. That function will now return a SearchTuple.
+
+There is one thing to be aware of with this construction. The pseudocode search function
+uses \texttt{gpupdate} and \texttt{pupdate} both internally and as return values. However,
+in Java this makes it a reference to the \emph{update} field of the node found. This means
+it can be changed by another thread. However, the result returned by search (ie the
+searchTuple) should never change. Therefore the \texttt{pupdate} and \texttt{gpupdate} are
+cloned in the constructor of the searchTuple, so they do not point to the update field of
+a node but to a new, unique, update object.
+
+\section{Performance Evaluation}
+
+\subsection{Hardware}
+
+The tests have been performed on two different systems. The first is a server
+at the VU, reachable at \url{fluit.few.vu.nl}. This machine has eight cores and
+is suitable for true parallelism testing. However, due to the high usage on
+this machine, the performance figures are not reliable. This machine is only
+used to verify that the data structures work even when a large number of
+threads are operating concurrently.
+
+The actual performance tests are done on a machine with an AMD 955 CPU
+(quad-core, 3.2GHz), running Xubuntu 12.04.1 LTS.
+
+\subsection{Evaluation}
+
+The figures in appendix \ref{app:vary_nelements} shows that the runtime of the
+list structures grows exponentially as the number of elements increases, while
+the runtime of the tree structures grows linearly.
+
+As expected, the coarse-grained data structures perform better than the
+fine-grained and lock-free data structures on a single thread (figure
+\ref{fig:threads_1}), because the overhead of locks and atomic operations is
+smaller. This is still the case when using two threads. Starting at four
+threads (figure \ref{fig:threads_4}), the lock-free implementations become the
+best performing data structures. The FineGrainedList performs worse than the
+CoarseGrainedList and the LockFreeList in almost all cases, except on a single
+thread, where the LockFreeList is the slowest. This means that on a single
+thread, the overhead of atomic operations is larger than the overhead of
+fine-grained locking. The design document predicted that the FineGrainedList
+would not perform very good, because of the change of ``congestions'' (when one
+thread is waiting for another to release a lock before continuing traversal).
+The LockFreeList was expected to scale very well with the number of threads,
+which is indeed the case (as opposed to the other list implementations).
+
+Furthermore, the overhead caused by fine-grained locking in a list structure
+seems to be killing for its performance. The CoarseGrainedList performs better
+than the FineGrainedList in all measurements. In the design document, we
+estimated this overhead to be much smaller, and thus that the FineGrainedList
+would perform better than the CoarseGrainedList. The measurements show that
+this is not the case, and that the overhead of fine-locking should be taken
+into account when designing a concurrent data structure. In fact, The
+CoarseGrainedList performs better than expected due to a small amount of
+locking overhead.
+
+The measured performance of the tree implementations fit the expectations from
+the design document. The CoarseGrainedTree performs best on one or two threads
+due to the absence of overhead from locking and atomic operations. On a larger
+number of threads, however, the advantage of the concurrent tree traversal by
+the FineGrainedTree and LockFreeTree is clearly visible. The runtime of each
+tree implementation still grows linearly, but those of the LockFreeTree and
+FineGrainedTree increase at a lower rate than the CoarseGrainedTree. This is
+consistent with the expectation from the design document, namely that the
+advantage of the FineGrainedList as opposed to the CoarseGrainedList would grow
+with the size of the list.
+
+The design document also raises the expectation that the LockFreeTree and
+FineGrainedTree would basically perform much better than the CoarseGrainedTree
+due to the absence of a global lock. However, fine-grained locks and atomic
+operations seem to cause more significant overhead than expected. It must be
+noted that we have only performed the measurements on a quad-core machine,
+whereas the difference between coarse-grained locking and
+fine-grained/lock-free implementations grow with the number of concurrent
+threads. Therefore, a 16-core machine will probably show a greater advantage of
+the latter two data structures.
+
+The runtime of the LockFreeTree increases at a lower rate than the
+FineGrainedTree. This means that the use of atomic operations is less costly
+(performance-wise) than fine-grained locking. This seems to contradict the
+better performance of the FineGrainedList as opposed to the LockFreeList on a
+single thread, which we discussed earlier. However, there is an explanation:
+On a single thread, the FineGrainedList only suffers from overhead of taking a
+lock and releasing it again. On two or more threads, the threads will
+some times have to wait for others threads to release a lock. The LockFreeList
+only has the overhead of atomic operations, which is on itself larger than the
+overhead caused by the act of taking and releasing a lock. However, threads in
+a lock-free environment will by definition never have to wait for other
+threads, thus the overhead is constant with respect to the number of threads.
+
+\subsubsection*{Memory overhead in LockFreeTree}
+
+Because the LockFreeTree stores values only in leaf nodes, traversal is more
+costly than in the other trees. In the design document, we expected that the
+this might cause some overhead when the tree contains large number of elements
+(more nodes to traverse through as opposed to the other trees), on a small
+number of threads (less advantage of wait-free concurrency). The figures in
+appendix \ref{app:vary_nthreads} confirm this expectation: using one or two
+threads, the CoarseGrainedTree performs a small amount better than the
+LockFreeTree.
+
+\subsubsection*{Locking overhead on more than four threads}
+
+The shape of the graphs in appendix \ref{app:vary_nthreads} show a clear
+pattern: The runtimes of all tree structures first decrease up to four threads.
+On more threads, the runtimes of the lock-based trees increase again, which
+seems strange at first sight. This can be explained by the fact that the
+measurements were performed on a quad-core machine. Up to four threads, the
+system schedules each thread to run on a separate core, this maximizing
+performance at four threads. Using more than four threads, processors have to
+constantly switch between different threads. Not only is this an expensive
+operation, but it also comes with the possibility of some thread which is
+holding the lock being suspended, which will block all other threads waiting
+for that lock as well.
+
+\begin{thebibliography}{}
+\bibitem{design}
+    Taddeüs Kroes, Jayke Meijer, Concurrency and Multithreading - Design
+
+\bibitem{book}
+    Maurice Herlihy \& Nir Shavit, The Art of Multiprocessor Programming. Morgan Kaufmann.
+    2012.
+
+\bibitem{insert}
+    Binary Search Tree: Insertion
+    \url{http://www.algolist.net/Data_structures/Binary_search_tree/Insertion}
+
+\bibitem{delete}
+    Binary Search Tree: Removal
+    \url{http://www.algolist.net/Data_structures/Binary_search_tree/Removal}
+
+\bibitem{lft}
+    Faith Ellen, Eric Ruppert, Panagiota Fatourou, Franck van Breugel, Non-blocking Search
+    Trees
+
+\appendix
+\section{Measurements using increasing number elements}
+\label{app:vary_nelements}
+
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/threads_1.pdf}
+    \caption{Varying number of elements using 1 threads}
+    \label{fig:threads_1}
+\end{figure}
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/threads_2.pdf}
+    \caption{Varying number of elements using 2 threads}
+    \label{fig:threads_2}
+\end{figure}
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/threads_4.pdf}
+    \caption{Varying number of elements using 4 threads}
+    \label{fig:threads_4}
+\end{figure}
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/threads_8.pdf}
+    \caption{Varying number of elements using 8 threads}
+    \label{fig:threads_8}
+\end{figure}
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/threads_10.pdf}
+    \caption{Varying number of elements using 10 threads}
+    \label{fig:threads_10}
+\end{figure}
+
+\pagebreak
+
+\section{Measurements using increasing number threads}
+\label{app:vary_nthreads}
+
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/elements_100000.pdf}
+    \caption{Varying number of threads, 100000 elements}
+    \label{fig:elements_100000}
+\end{figure}
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/elements_300000.pdf}
+    \caption{Varying number of threads, 300000 elements}
+    \label{fig:elements_300000}
+\end{figure}
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/elements_500000.pdf}
+    \caption{Varying number of threads, 500000 elements}
+    \label{fig:elements_500000}
+\end{figure}
+\begin{figure}[H]
+    \includegraphics[scale=0.55]{graphs/elements_1000000.pdf}
+    \caption{Varying number of threads, 1000000 elements}
+    \label{fig:elements_1000000}
+\end{figure}
+
+\end{thebibliography}
+\end{document}
