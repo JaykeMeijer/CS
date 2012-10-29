@@ -10,3 +10,4 @@ hotel: Hotel.java HotelImpl.java hotelserver.java
 
 clean:
 	rm -f *.class
+	rm -f *~

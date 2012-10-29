@@ -8,7 +8,7 @@ all: rpc paperserver paperclient
 rpc: paperserver.x
 	$(RPC) $(RPCFLAGS) paperserver.x
 
-paperserver: paperserver.c paperserver.h
+paperserver: paperserver.c
 	$(CC) -c paperserver.c $(CFLAGS)
 	$(CC) -c paperserver_svc.c $(CFLAGS)
 	$(CC) -c paperserver_xdr.c $(CFLAGS)
@@ -27,4 +27,5 @@ clean:
 	rm -f paperserver
 	rm -f paperclient
 	rm -f paperserver_*
+	rm -f paperserver.h
 	rm -f *~

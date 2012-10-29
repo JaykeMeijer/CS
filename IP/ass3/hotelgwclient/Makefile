@@ -6,3 +6,6 @@ hotelgwclient: hotelgwclient.c
 
 clean:
 	rm -f hotelgwclient
+	rm -f *~
+
+.PHONY: hotelgwclient

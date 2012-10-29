@@ -8,3 +8,6 @@ hotelgw: Hotel.java hotelgw.java
 
 clean:
 	rm -f *.class
+	rm -f *~
+
+.PHONY: hotelgw

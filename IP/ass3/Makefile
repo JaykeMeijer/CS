@@ -4,7 +4,7 @@ CFLAGS = -O2
 
 all: paper hotelgwclient hotelgw hotel
 
-paper: paper/paperserver.c paper/paperserver.h
+paper: paper/paperserver.c
 	$(MAKE) -C paper
 
 hotel: hotel/hotelclient.java hotel/hotelserver.java hotel/Hotel.java \
@@ -26,5 +26,6 @@ clean:
 	$(MAKE) clean -C hotel
 	$(MAKE) clean -C hotelgwclient
 	$(MAKE) clean -C hotelgw
+	rm -f *~
 
 .PHONY: hotel hotelgwclient paper hotelgw

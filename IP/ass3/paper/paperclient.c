@@ -10,7 +10,7 @@ void print_usage() {
            "\tpaperclient <address> remove <paper number>\n" \
            "\tpaperclient <address> list\n" \
            "\tpaperclient <address> info <paper number>\n" \
-           "\tpaperclient <address> fetch <paper number>");
+           "\tpaperclient <address> fetch <paper number>\n");
     exit(1);
 }
 
