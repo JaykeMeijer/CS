@@ -1,0 +1,108 @@
+\documentclass[a4paper]{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{alltt,amsmath,hyperref,graphicx}
+\usepackage[usenames,dvipsnames]{xcolor}
+
+% Link colors
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=OliveGreen}
+
+% Set paragraph indentation
+\parindent 0pt
+\parskip 1.0ex plus 0.5ex minus 0.2ex
+
+\title{Internet Programming - Assignment 4}
+\author{Jayke Meijer, 2526284, jmr251, \url{jayke.meijer@gmail.com}}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\pagebreak
+
+\section{Used platform}
+
+All code is tested and executed on a machine running Ubuntu 12.04. The used version of
+\emph{gcc} is 4.6.3. The JDK used is OpenJDK IcedTea6 1.11.4. The Java version is
+1.6.0\_24. The used version of Apache is 2.2.23, the used version of PHP is 5.4.8.
+
+\section{Paper Storage}
+
+The first part of this assignment is to implement a webpage for the paper storage system, using
+CGI. Since the questions ask about some vital parts of the design, these will be answered 
+first.
+
+\subsection{Questions}
+
+\textbf{Question A} The CGIs are implemented in C. This is done since the paper server itself is in C,
+and it uses Sun RPC. By using C, I can directly use the RPC functions to communicate to the server,
+eliminating the need for any explicit middleware that translates the requests (this is handled by Sun RPC).
+
+\textbf{Question B} Because the paper server is designed to work with RPC. If we were to use PHP, we would
+first need to translate the request from PHP to an RPC call, adding another step. By using CGI, we can
+write the server in any language, including C, which makes it easy to perform RPC.
+
+\textbf{Question C} I designed an upload such as described in rfc1867. The data is send by using POST,
+so the size of the data is stored in Environment variables. The data itself is received from stdin, which
+is possible since the size is known. The data is then parsed, by reading the lines on which the data is
+stored, one for the author, one for the title and a variable number of lines for the actual paper. This is
+copied to local memory, to be added to the server (using RPC).
+
+An alternative is to upload the paper using PHP, and have the CGI read it from the upload location. However,
+this is not conform the assignment.
+
+\subsection{Further design}
+
+To print a HTML page, a shared C file called \texttt{html.c} is created, which contains functions to print
+partial html code that is used in several locations. This allows for cleaner code, since strings with
+html code can be rather large.
+
+The CGI to print the papers in the system receives a linked list with data on each paper. It makes a new
+list item for each of these papers.
+
+The CGI to view a paper writes the header (since the data type is not stored on the server, we assume we only
+work with PDF's). It then writes the binary data to the client.
+
+\section{Hotel reservations}
+
+The second part of the exercise is to build a webpage for the hotel reservation system. There are two versions
+required, one using only PHP, the other using AJAX.
+
+\subsection{PHP}
+
+The first version uses only PHP. The entire page is build at the server, and send as HTML to the client.
+The page is static, and refreshing the data requires reloading the page.
+
+The communication with the hotel server is performed using sockets and the hotel gateway application.
+
+For reserving a room, a form is filled in and the server uses this data to actually book the room. For listing
+the free rooms or the guests, the data is requested over the socket, received and unpacked. It arrives in a
+string with separation characters (either \texttt{$\backslash$t} or \texttt{$\backslash$n}). It is unpacked using \texttt{explode()}.
+
+\subsection{AJAX}
+
+The AJAX version does not use PHP to build the page. The page is static HTML (and some CSS) and uses JavaScript
+to dynamically include the variable data. To do so, an AJAX request is made to the server. On the server, this
+request is handled using PHP, which replies using JSON.
+
+The JSON reply is used by the JavaScript to create and place the data in the DOM tree, and therefore on the page.
+
+A special function is the function to reload the page. This requests the data again from the server, and rebuilds
+the lists. By calling the function \texttt{rebuildList()} and \texttt{rebuildGuests} from a timer, it is possible
+to create a page that updates on a given interval.
+
+The booking of room is done from a popup (a DOM object that is hidden or not). On this popup there are some form
+elements, making it look like a form. However, the button does not perform a form submit, but calls a JavaScript
+function that places an AJAX call with the data filled in on the form.
+
+\subsection{Questions}
+
+\textbf{Question D} It would have been possible to use a CGI. If you were to use it directly on the server,
+bypassing the gateway, this CGI would have to be written in Java. Starting a JVM for every call is
+costly, so in that case it would be advisable to use servlets.
+
+The AJAX version is also possible to implement using CGI or servlets. The AJAX call can be made to a CGI or servlet,
+as long as the program responds using JSON.
+
+\end{document}

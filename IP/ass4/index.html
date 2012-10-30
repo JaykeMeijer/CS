@@ -1,0 +1,39 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title> Assignment 4 by Jayke Meijer</title>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    </head>
+
+    <body>
+        <h1>Conference System</h1>
+        <p>This is the system for conferences. Here you can upload and view
+        papers, and make hotel reservations.
+        </p>
+        <h2>Paper system:</h2>
+        <p><a href="paper/papers.cgi">View the papers in the system</a></p>
+        <p>Upload a paper to the system:</p>
+        <form enctype="multipart/form-data" action="paper/paperload.cgi" 
+            method=post>
+        Title of paper:
+        <input name="title" type="text"><br>
+        Name of author:
+        <input name="name" type="text"><br>
+        <input name="pdf" type="file"><br>
+        <input type="submit" value="Upload the document">
+        </form>
+
+        <h2>Hotel system (pure php)</h2>
+        <p>
+        <a href="hotelphp/hotellist.php">Show the free rooms in the hotel</a><br>
+        <a href="hotelphp/participants.php">Show the conference participants</a>
+        </p>
+
+        <h2>Hotel system (AJAX)</h2>
+        <p>
+        <a href="hotelajax/list.html">Show the free rooms in the hotel</a><br>
+        <a href="hotelajax/participants.html">Show the conference participants</a>
+        </p>
+    </body>
+</html>

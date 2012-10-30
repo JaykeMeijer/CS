@@ -1,0 +1,21 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Hotel reservation system by Jayke Meijer</title>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+        <script type="text/javascript" src="http://ajax.cdnjs.com/ajax/libs/json2/20110223/json2.js"></script>
+        <script type="text/javascript" src="ajax.js"></script>
+        <link rel="stylesheet" type="text/css" href="style.css">
+    </head>
+
+    <body onload="buildGuests()">
+        <h1>Participants</h1>
+        <p>The following people are participating:
+        <ul id="guests">
+        </ul>
+        </p>
+        <div id="refresh" onClick="rebuildGuests()">Refresh the list</div> - 
+        <a href="../index.html">Go back to the start page</a>
+    </body>
+</html>
