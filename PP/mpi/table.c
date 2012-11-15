@@ -93,8 +93,8 @@ File reading and graph constructions should not be considered for any timing res
     int bad_edges=0, oriented=0;
 
     fp=fopen(INPUTFILE, "r");
-    if(fscanf(fp, "%d %d %d \n", &n, &m, &oriented) == 0)
-        fprintf(stderr, "Nothing read\n");
+    i = fscanf(fp, "%d %d %d \n", &n, &m, &oriented);
+        
 #ifdef VERBOSE
     printf("%d %d %d\n", n,m,oriented);
 #endif
@@ -118,8 +118,7 @@ File reading and graph constructions should not be considered for any timing res
     }
 
     while (!feof(fp)) {
-        if(fscanf(fp, "%d %d %d \n", &source, &destination, &weight))
-            fprintf(stderr, "Nothing read\n");
+        i = fscanf(fp, "%d %d %d \n", &source, &destination, &weight);
         if (!oriented) {
             if (tab[source-1][destination-1] < MAX_DISTANCE) 
                 bad_edges++;
