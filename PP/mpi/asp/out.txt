@@ -1,0 +1,1 @@
+running sequential with random generation for ../sample_graphs/star_3_5.gr.new
