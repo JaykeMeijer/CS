@@ -3,7 +3,7 @@ import java.util.ArrayList;
 @SuppressWarnings("serial") public class HotelImpl extends java.rmi.server.UnicastRemoteObject implements Hotel
 {
     final static int[] capacity = {10, 20, 20};
-    @SuppressWarnings("unchecked") ArrayList<String>[] rooms = 
+    ArrayList<String>[] rooms = 
         (ArrayList<String>[])new ArrayList[]
         {new ArrayList<String>(),
          new ArrayList<String>(),
