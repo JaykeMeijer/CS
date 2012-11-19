@@ -1,9 +1,18 @@
+/*
+ * asp-par.c:
+ *     All-pairs shortest path implementation based on Floyd's
+ *     algorithms. Also diameter and distance calculation.
+ *
+ *      Parallel version.
+ *
+ * Modified by Jayke Meijer, 15-nov-2012
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "mpi.h"
-#include "../table.h"
+#include "table.h"
 
 /******************** Distance calculation *************************/
 double do_dist(int **tab, int n, int myid, int no_proc)

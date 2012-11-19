@@ -11,7 +11,7 @@
 
 #include <string.h>
 #include <sys/time.h>
-#include "../table.h"
+#include "table.h"
 
 /******************** Distance calculation *************************/
 double do_dist(int **tab, int n)
