@@ -1,9 +1,9 @@
 all: asp-seq asp-par
 
-asp-seq: asp-seq.c
+asp-seq: asp-seq.c table.c
 	gcc -Wall -O3 -o asp-seq asp-seq.c table.c
 
-asp-par: asp-par.c
+asp-par: asp-par.c table.c
 	mpicc -Wall -O3 -o asp-par asp-par.c table.c
 
 clean:

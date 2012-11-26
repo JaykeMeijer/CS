@@ -120,7 +120,7 @@ int main(int argc, char **argv)
     time = (end.tv_sec + (end.tv_usec / 1000000.0)) - 
         (start.tv_sec + (start.tv_usec / 1000000.0));
 
-    fprintf(stderr, "Distance calculation took %10.3f seconds\n", time);
+    fprintf(stderr, "Distance took %10.3f seconds\n", time);
 
     /******************** ASP calculation *************************/
     if(gettimeofday(&start, 0) != 0) {
@@ -156,7 +156,7 @@ int main(int argc, char **argv)
     time = (end.tv_sec + (end.tv_usec / 1000000.0)) - 
         (start.tv_sec + (start.tv_usec / 1000000.0));
 
-    fprintf(stderr, "Diameter calculation took %10.3f seconds\n", time);
+    fprintf(stderr, "Diameter took %10.3f seconds\n", time);
 
     if(print == 1) {
         printf("Table after ASP:\n");

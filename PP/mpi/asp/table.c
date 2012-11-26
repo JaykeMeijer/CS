@@ -49,6 +49,28 @@ void init_tab(int n, int *mptr, int ***tabptr, int oriented)
     *mptr = m;
 }
 
+// Malloc the necessary memory for a table
+void malloc_tab(int n, int ***tabptr)
+{
+    int **tab;
+    int i;
+
+    tab = malloc(n * sizeof(int *));
+    if (tab == NULL) {
+        fprintf(stderr,"cannot malloc distance table\n");
+        exit(42);
+    }
+
+    for (i = 0; i < n; i++) {
+        tab[i] = malloc(n * sizeof(int));
+        if (tab[i] == NULL) {
+            fprintf(stderr,"cannot malloc distance table\n");
+            exit(42);
+        }
+    }
+    *tabptr = tab;
+}
+
 
 // reading the list of edges from a file and constructing an adjacency matrix 
 // note that it is not mandatory for the graph to be stored as an adjacency matrix - 

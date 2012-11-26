@@ -5,6 +5,7 @@
 // #define VERBOSE
 
 void init_tab(int n, int *mptr, int ***tabptr, int oriented);
+void malloc_tab(int n, int ***tabptr);
 int read_tab(char *INPUTFILE, int *nptr, int *mptr, int ***tabptr, int *optr);
 void free_tab(int **tab, int n);
 void print_tab(int **tab, int n);
