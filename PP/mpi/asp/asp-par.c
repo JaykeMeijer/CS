@@ -19,8 +19,7 @@ double do_dist(int **tab, int n, int myid, int no_proc, int *start, int *lines)
 {
     int i, j;
     double total = 0;
-    double received_total;
-    MPI_Status stat;
+    double received_total = 0;
 
     // Calculate total for my part of the table
     for(i = start[myid]; i < start[myid] + lines[myid]; i++)
@@ -28,19 +27,11 @@ double do_dist(int **tab, int n, int myid, int no_proc, int *start, int *lines)
             if(tab[i][j] != MAX_DISTANCE)
                 total += tab[i][j];
 
-    if(myid != 0) {
-        // Slave process, send to root.
-        MPI_Send(&total, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
-    }
-    else {
-        // Root, receive all slave data
-        for(i = 1; i < no_proc; i++) {
-            MPI_Recv(&received_total, 1, MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &stat);
-            total += received_total;
-        }
-    }
+    // Determine total of entire table
+    MPI_Reduce(&total, &received_total, no_proc, MPI_DOUBLE, MPI_SUM, 0,
+        MPI_COMM_WORLD);
 
-    return total;
+    return received_total;
 }
 
 /******************** ASP calculation *************************/
@@ -63,11 +54,9 @@ void do_asp(int **tab, int n, int myid, int no_proc, int *start, int *lines)
         }
 
         // Send the just calculated data to the other processes
-        for(i = 0; i < no_proc; i++) {
+        for(i = 0; i < no_proc; i++)
             for(j = start[i]; j < start[i] + lines[i]; j++)
                 MPI_Bcast(tab[j], n, MPI_INT, i, MPI_COMM_WORLD);
-        }
-        MPI_Barrier(MPI_COMM_WORLD);
     }
 }
 
@@ -76,7 +65,6 @@ int do_diam(int **tab, int n, int myid, int no_proc, int *start, int *lines)
 {
     int i, j, longest = 0;
     int received_longest;
-    MPI_Status stat;
 
     // Find the longest path in my part of the table
     for(i = start[myid]; i < start[myid] + lines[myid]; i++)
@@ -84,19 +72,11 @@ int do_diam(int **tab, int n, int myid, int no_proc, int *start, int *lines)
             if(tab[i][j] != 0 && tab[i][j] > longest)
                 longest = tab[i][j];
 
-    if(myid != 0) {
-        // Slave process, send to root.
-        MPI_Send(&longest, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-    } else {
-        // Root, receive all slave data
-        for(i = 1; i < no_proc; i++) {
-            MPI_Recv(&received_longest, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &stat);
-            if(received_longest > longest)
-                longest = received_longest;
-        }
-    }
+    // Determine longest of the entire table
+    MPI_Reduce(&longest, &received_longest, no_proc, MPI_INT, MPI_MAX, 0,
+        MPI_COMM_WORLD);
 
-    return longest;
+    return received_longest;
 }
 
 void usage() {
