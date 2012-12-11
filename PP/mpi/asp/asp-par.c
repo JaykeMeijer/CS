@@ -41,9 +41,7 @@ void do_asp(int **tab, int n, int myid, int no_proc, int *start, int *lines)
 
     // Run the ASP algorithm. Update every pass.
     for (k = 0; k < n; k++) {
-        // Perform a calculation pass over my part of the table
         for (i = start[myid]; i < start[myid] + lines[myid]; i++) {
-            //printf("Proces %d calc line %d\n", myid, i);
             if (i != k) {
                 for (j = 0; j < n; j++) {
                     tmp = tab[i][k] + tab[k][j];
