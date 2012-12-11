@@ -74,9 +74,6 @@ int main(int argc, char **argv)
     double time;
     char FILENAME[100];
 
-
-    usage();
-
     n = 0;
     for(i=1; i<argc; i++) {
         if(!strcmp(argv[i], "-print")) {
@@ -159,7 +156,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "Diameter took %10.3f seconds\n", time);
 
     if(print == 1) {
-        printf("Table after ASP:\n");
+        //printf("Table after ASP:\n");
         print_tab(tab, n);
         printf("Total distance: %.0lf\n", total);
         printf("Diameter: %d\n", diameter);
