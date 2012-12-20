@@ -39,6 +39,14 @@ void do_asp(int **tab, int n, int myid, int no_proc, int *start, int *lines)
 {
     int i, j, k, tmp;
 
+    // Create data for sending to other processes
+    int elem_per_proc[no_proc];
+    int start_per_proc[no_proc];
+    for(i = 0; i < no_proc; i++) {
+        elem_per_proc[i] = lines[i] * n;
+        start_per_proc[i] = start[i] * n;
+    }
+
     // Run the ASP algorithm. Update every pass.
     for (k = 0; k < n; k++) {
         for (i = start[myid]; i < start[myid] + lines[myid]; i++) {
@@ -56,6 +64,53 @@ void do_asp(int **tab, int n, int myid, int no_proc, int *start, int *lines)
             for(j = start[i]; j < start[i] + lines[i]; j++)
                 MPI_Bcast(tab[j], n, MPI_INT, i, MPI_COMM_WORLD);
     }
+}
+
+void do_asp_lin(int **tab, int n, int myid, int no_proc, int *start, int *lines)
+{
+    int i, j, k, tmp;
+    int *lintab = malloc(n * n * sizeof(int));
+
+    // Transform to linear table
+    for(i = 0; i < n ; i++)
+        for(j = 0; j < n; j++)
+            lintab[i * n + j] = tab[i][j];
+
+    // Create data for sending to other processes
+    int elem_per_proc[no_proc];
+    int start_per_proc[no_proc];
+    for(i = 0; i < no_proc; i++) {
+        elem_per_proc[i] = lines[i] * n;
+        start_per_proc[i] = start[i] * n;
+    }
+
+    // Run the ASP algorithm. Update every pass.
+    for (k = 0; k < n; k++) {
+        for (i = start[myid]; i < start[myid] + lines[myid]; i++) {
+            if (i != k) {
+                for (j = 0; j < n; j++) {
+                    tmp = lintab[i * n + k] + lintab[k * n + j];
+                    if (tmp < lintab[i * n + j])
+                        lintab[i * n + j] = tmp;
+                }
+            }
+        }
+
+        // Send the just calculated data to the other processes
+        MPI_Allgatherv(&lintab[start_per_proc[myid]] // Start of data to send
+                     , elem_per_proc[myid]     // Amount of data to send
+                     , MPI_INT          // Type of data to send
+                     , lintab           // Buffer to store in
+                     , elem_per_proc    // Array of how much elements each process contains
+                     , start_per_proc   // Start address for each process to store new data
+                     , MPI_INT          // Type of receiving data
+                     , MPI_COMM_WORLD); // MPI Communicator
+    }
+
+    // Rebuild into the original table
+    for(i = 0; i < n ; i++)
+        for(j = 0; j < n; j++)
+            tab[i][j] = lintab[i * n + j];
 }
 
 /******************** Diam calculation *************************/
@@ -182,7 +237,8 @@ int main ( int argc, char *argv[] ) {
         wtime = MPI_Wtime();
 
     MPI_Barrier(MPI_COMM_WORLD);
-    do_asp(tab, n, id, p, process_start, process_lines);
+    //do_asp(tab, n, id, p, process_start, process_lines);
+    do_asp_lin(tab, n, id, p, process_start, process_lines);
 
     if(id == 0) {
         wtime = MPI_Wtime() - wtime;
