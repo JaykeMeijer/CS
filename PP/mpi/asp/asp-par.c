@@ -39,14 +39,6 @@ void do_asp(int **tab, int n, int myid, int no_proc, int *start, int *lines)
 {
     int i, j, k, tmp;
 
-    // Create data for sending to other processes
-    int elem_per_proc[no_proc];
-    int start_per_proc[no_proc];
-    for(i = 0; i < no_proc; i++) {
-        elem_per_proc[i] = lines[i] * n;
-        start_per_proc[i] = start[i] * n;
-    }
-
     // Run the ASP algorithm. Update every pass.
     for (k = 0; k < n; k++) {
         for (i = start[myid]; i < start[myid] + lines[myid]; i++) {
@@ -70,6 +62,8 @@ void do_asp_lin(int **tab, int n, int myid, int no_proc, int *start, int *lines)
 {
     int i, j, k, tmp;
     int *lintab = malloc(n * n * sizeof(int));
+    int elem_per_proc[no_proc];
+    int start_per_proc[no_proc];
 
     // Transform to linear table
     for(i = 0; i < n ; i++)
@@ -77,8 +71,6 @@ void do_asp_lin(int **tab, int n, int myid, int no_proc, int *start, int *lines)
             lintab[i * n + j] = tab[i][j];
 
     // Create data for sending to other processes
-    int elem_per_proc[no_proc];
-    int start_per_proc[no_proc];
     for(i = 0; i < no_proc; i++) {
         elem_per_proc[i] = lines[i] * n;
         start_per_proc[i] = start[i] * n;
@@ -97,14 +89,9 @@ void do_asp_lin(int **tab, int n, int myid, int no_proc, int *start, int *lines)
         }
 
         // Send the just calculated data to the other processes
-        MPI_Allgatherv(&lintab[start_per_proc[myid]] // Start of data to send
-                     , elem_per_proc[myid]     // Amount of data to send
-                     , MPI_INT          // Type of data to send
-                     , lintab           // Buffer to store in
-                     , elem_per_proc    // Array of how much elements each process contains
-                     , start_per_proc   // Start address for each process to store new data
-                     , MPI_INT          // Type of receiving data
-                     , MPI_COMM_WORLD); // MPI Communicator
+        MPI_Allgatherv(&lintab[start_per_proc[myid]], elem_per_proc[myid],
+                       MPI_INT, lintab, elem_per_proc, start_per_proc, MPI_INT,
+                       MPI_COMM_WORLD);
     }
 
     // Rebuild into the original table
@@ -221,6 +208,7 @@ int main ( int argc, char *argv[] ) {
     }
 
     /******************** Distance calculation *************************/
+    MPI_Barrier(MPI_COMM_WORLD);
     if(id == 0)
         wtime = MPI_Wtime();
 
@@ -233,6 +221,7 @@ int main ( int argc, char *argv[] ) {
     }
 
     /******************** ASP *************************/
+    MPI_Barrier(MPI_COMM_WORLD);
     if(id == 0)
         wtime = MPI_Wtime();
 
@@ -246,6 +235,7 @@ int main ( int argc, char *argv[] ) {
     }
 
     /******************** Diameter *************************/
+    MPI_Barrier(MPI_COMM_WORLD);
     if(id == 0)
         wtime = MPI_Wtime();
 
@@ -258,7 +248,6 @@ int main ( int argc, char *argv[] ) {
     }
 
     if(id == 0 && print == 1) {
-        //printf("Table after ASP:\n");
         print_tab(tab, n);
         printf("Total distance: %.0lf\n", total);
         printf("Diameter: %d\n", diameter);
