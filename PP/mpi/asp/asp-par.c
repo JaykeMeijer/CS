@@ -140,7 +140,7 @@ int main ( int argc, char *argv[] ) {
     int print = 0;
     char FILENAME[100];
 
-    int *process_lines, *process_start;
+    int *process_lines, *process_start, *process_start2, *process_lines2, *process_start3, *process_lines3;
 
     /******************** MPI Initialisation *************************/
     ierr = MPI_Init ( &argc, &argv );
@@ -198,21 +198,28 @@ int main ( int argc, char *argv[] ) {
     // Determine the lines and start per process
     process_lines = malloc(p * sizeof(int));
     process_start = malloc(p * sizeof(int));
+    process_lines2 = malloc(p * sizeof(int));
+    process_start2 = malloc(p * sizeof(int));
+    process_lines3 = malloc(p * sizeof(int));
+    process_start3 = malloc(p * sizeof(int));
     leftover = n % p;
     lines = n / p;
 
-    // Determine the number of lines and the startposition for each process
     for(i = 0; i < p; i++) {
         process_lines[i] = i < leftover ? lines + 1 : lines;
         process_start[i] = i * lines + (i < leftover ? i : leftover);
     }
+    memcpy(process_lines2, process_lines, p * sizeof(int));
+    memcpy(process_start2, process_start, p * sizeof(int));
+    memcpy(process_lines3, process_lines, p * sizeof(int));
+    memcpy(process_start3, process_start, p * sizeof(int));
 
     /******************** Distance calculation *************************/
     MPI_Barrier(MPI_COMM_WORLD);
     if(id == 0)
         wtime = MPI_Wtime();
-
     MPI_Barrier(MPI_COMM_WORLD);
+
     total = do_dist(tab, n, id, p, process_start, process_lines);
 
     if(id == 0) {
@@ -227,7 +234,7 @@ int main ( int argc, char *argv[] ) {
 
     MPI_Barrier(MPI_COMM_WORLD);
     //do_asp(tab, n, id, p, process_start, process_lines);
-    do_asp_lin(tab, n, id, p, process_start, process_lines);
+    do_asp_lin(tab, n, id, p, process_start2, process_lines2);
 
     if(id == 0) {
         wtime = MPI_Wtime() - wtime;
@@ -240,7 +247,7 @@ int main ( int argc, char *argv[] ) {
         wtime = MPI_Wtime();
 
     MPI_Barrier(MPI_COMM_WORLD);
-    diameter = do_diam(tab, n, id, p, process_start, process_lines);
+    diameter = do_diam(tab, n, id, p, process_start3, process_lines3);
 
     if(id == 0) {
         wtime = MPI_Wtime() - wtime;
@@ -255,8 +262,12 @@ int main ( int argc, char *argv[] ) {
 
     // Clean up
     free_tab(tab, n);
-    free(process_start);
+    /*free(process_start);
     free(process_lines);
+    free(process_start2);
+    free(process_lines2);
+    free(process_start3);
+    free(process_lines3);*/
 
     // Shut down MPI.
     ierr = MPI_Finalize();
