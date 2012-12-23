@@ -15,7 +15,7 @@
 #include "table.h"
 
 /******************** Distance calculation *************************/
-double do_dist(int **tab, int n, int myid, int no_proc, int *start, int *lines)
+double do_dist(int **tab, int n, int myid, int no_proc, int *process_start, int *process_lines)
 {
     int i, j;
     double total = 0;
@@ -23,10 +23,10 @@ double do_dist(int **tab, int n, int myid, int no_proc, int *start, int *lines)
 
     /* UNCOMMENT THESE LINES MAKES IT WORK FOR 4 PROCESSES ?!! */
     //int startloc;
-    //memcpy(&startloc, start, sizeof(int));
+    //memcpy(&startloc, process_start, sizeof(int));
 
     // Calculate total for my part of the table
-    for(i = start[myid]; i < start[myid] + lines[myid]; i++)
+    for(i = process_start[myid]; i < process_start[myid] + process_lines[myid]; i++)
         for(j = 0; j < n; j++)
             if(tab[i][j] != MAX_DISTANCE)
                 total += tab[i][j];
@@ -39,13 +39,13 @@ double do_dist(int **tab, int n, int myid, int no_proc, int *start, int *lines)
 }
 
 /******************** ASP calculation *************************/
-void do_asp(int **tab, int n, int myid, int no_proc, int *start, int *lines)
+void do_asp(int **tab, int n, int myid, int no_proc, int *process_start, int *process_lines)
 {
     int i, j, k, tmp;
 
     // Run the ASP algorithm. Update every pass.
     for (k = 0; k < n; k++) {
-        for (i = start[myid]; i < start[myid] + lines[myid]; i++) {
+        for (i = process_start[myid]; i < process_start[myid] + process_lines[myid]; i++) {
             if (i != k) {
                 for (j = 0; j < n; j++) {
                     tmp = tab[i][k] + tab[k][j];
@@ -57,12 +57,12 @@ void do_asp(int **tab, int n, int myid, int no_proc, int *start, int *lines)
 
         // Send the just calculated data to the other processes
         for(i = 0; i < no_proc; i++)
-            for(j = start[i]; j < start[i] + lines[i]; j++)
+            for(j = process_start[i]; j < process_start[i] + process_lines[i]; j++)
                 MPI_Bcast(tab[j], n, MPI_INT, i, MPI_COMM_WORLD);
     }
 }
 
-void do_asp_lin(int **tab, int n, int myid, int no_proc, int *start, int *lines)
+void do_asp_lin(int **tab, int n, int myid, int no_proc, int *process_start, int *process_lines)
 {
     int i, j, k, tmp;
     int *lintab = malloc(n * n * sizeof(int));
@@ -76,13 +76,13 @@ void do_asp_lin(int **tab, int n, int myid, int no_proc, int *start, int *lines)
 
     // Create data for sending to other processes
     for(i = 0; i < no_proc; i++) {
-        elem_per_proc[i] = lines[i] * n;
-        start_per_proc[i] = start[i] * n;
+        elem_per_proc[i] = process_lines[i] * n;
+        start_per_proc[i] = process_start[i] * n;
     }
 
     // Run the ASP algorithm. Update every pass.
     for (k = 0; k < n; k++) {
-        for (i = start[myid]; i < start[myid] + lines[myid]; i++) {
+        for (i = process_start[myid]; i < process_start[myid] + process_lines[myid]; i++) {
             if (i != k) {
                 for (j = 0; j < n; j++) {
                     tmp = lintab[i * n + k] + lintab[k * n + j];
@@ -105,13 +105,13 @@ void do_asp_lin(int **tab, int n, int myid, int no_proc, int *start, int *lines)
 }
 
 /******************** Diam calculation *************************/
-int do_diam(int **tab, int n, int myid, int no_proc, int *start, int *lines)
+int do_diam(int **tab, int n, int myid, int no_proc, int *process_start, int *process_lines)
 {
     int i, j, longest = 0;
     int received_longest;
 
     // Find the longest path in my part of the table
-    for(i = start[myid]; i < start[myid] + lines[myid]; i++)
+    for(i = process_start[myid]; i < process_start[myid] + process_lines[myid]; i++)
         for(j = 0; j < n; j++)
             if(tab[i][j] != 0 && tab[i][j] > longest)
                 longest = tab[i][j];
