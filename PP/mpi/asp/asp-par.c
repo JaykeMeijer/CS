@@ -21,6 +21,10 @@ double do_dist(int **tab, int n, int myid, int no_proc, int *start, int *lines)
     double total = 0;
     double received_total = 0;
 
+    /* UNCOMMENT THESE LINES MAKES IT WORK FOR 4 PROCESSES ?!! */
+    //int startloc;
+    //memcpy(&startloc, start, sizeof(int));
+
     // Calculate total for my part of the table
     for(i = start[myid]; i < start[myid] + lines[myid]; i++)
         for(j = 0; j < n; j++)
@@ -206,13 +210,17 @@ int main ( int argc, char *argv[] ) {
         process_start[i] = i * lines + (i < leftover ? i : leftover);
     }
 
+    printf("%d - Pointers: %d & %d\n", id, (int)process_lines, (int)process_start);
+
     /******************** Distance calculation *************************/
     MPI_Barrier(MPI_COMM_WORLD);
     if(id == 0)
         wtime = MPI_Wtime();
     MPI_Barrier(MPI_COMM_WORLD);
 
+    printf("%d - Pointers: %d & %d\n", id, (int)process_lines, (int)process_start);
     total = do_dist(tab, n, id, p, process_start, process_lines);
+    printf("%d - Pointers: %d & %d\n", id, (int)process_lines, (int)process_start);
 
     if(id == 0) {
         wtime = MPI_Wtime() - wtime;
