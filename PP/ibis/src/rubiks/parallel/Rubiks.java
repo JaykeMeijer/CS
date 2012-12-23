@@ -1,4 +1,4 @@
-package rubiks.sequential;
+package rubiks.parallel;
 
 /**
  * Solver for rubik's cube puzzle.
